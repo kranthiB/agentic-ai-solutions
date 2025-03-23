@@ -2,6 +2,8 @@
 
 This proof of concept demonstrates an AI-powered sales meeting preparation agent for ABC Paints sales representatives. The agent analyzes customer data from multiple sources and provides comprehensive meeting preparation materials with transparent reasoning.
 
+![SPA](https://raw.githubusercontent.com/kranthiB/tech-pulse/main/gif/SalesMeetingPreparationAgent.gif)
+
 ## Prerequisites
 
 - Python 3.9+ installed
