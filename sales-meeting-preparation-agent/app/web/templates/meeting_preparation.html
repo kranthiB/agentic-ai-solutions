@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Meeting Preparation - {{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5">Meeting Preparation</h1>
+        <div class="d-flex align-items-center">
+            <h2 class="h3 me-3 mb-0">{{ customer.name }}</h2>
+            <span class="badge rounded-pill {% if meeting.type == 'Quarterly Review' %}bg-primary{% elif meeting.type == 'Product Consultation' %}bg-success{% elif meeting.type == 'Project Planning' %}bg-warning text-dark{% elif meeting.type == 'Follow-up' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                {{ meeting.type }}
+            </span>
+        </div>
+        <p class="text-muted">
+            {{ meeting.date }} at {{ meeting.time }} | {{ meeting.duration_minutes }} minutes | {{ meeting.location }}
+        </p>
+        <div class="alert alert-light border">
+            <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                    <strong>Preparation Quality:</strong>
+                    <div class="progress mt-1" style="height: 10px;">
+                        <div class="progress-bar {% if preparation.preparation_confidence < 0.4 %}bg-danger{% elif preparation.preparation_confidence < 0.7 %}bg-warning{% else %}bg-success{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ preparation.preparation_confidence * 100 }}%;" 
+                             aria-valuenow="{{ preparation.preparation_confidence * 100 }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                <div class="ms-3">
+                    <strong>{{ (preparation.preparation_confidence * 100) | round(0) }}%</strong>
+                </div>
+            </div>
+            <small class="text-muted">Generated at: {{ preparation.generated_at }}</small>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <!-- Customer Information Panel -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Customer Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h4 class="h6">Contact</h4>
+                    <p class="mb-1">{{ customer.primary_contact.name }}</p>
+                    <p class="mb-1 small text-muted">{{ customer.primary_contact.title }}</p>
+                    <p class="mb-1 small text-muted">{{ customer.primary_contact.email }}</p>
+                    <p class="mb-0 small text-muted">{{ customer.primary_contact.phone }}</p>
+                </div>
+                <div class="mb-3">
+                    <h4 class="h6">Company Details</h4>
+                    <p class="mb-1 small text-muted">Industry: {{ customer.industry }}</p>
+                    <p class="mb-1 small text-muted">Size: {{ customer.size }}</p>
+                    <p class="mb-1 small text-muted">Location: {{ customer.location }}</p>
+                    <p class="mb-1 small text-muted">Segment: {{ customer.segment }}</p>
+                    <p class="mb-0 small text-muted">Relationship since: {{ customer.relationship_since }}</p>
+                </div>
+                <a href="/customer/{{ customer.id }}" class="btn btn-sm btn-outline-primary">View Full Profile</a>
+            </div>
+        </div>
+        
+        <!-- Preferences and Pain Points Panel -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Preferences & Pain Points</h3>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for item in preparation.preferences_and_pain_points %}
+                        <li class="list-group-item">
+                            <div class="d-flex align-items-start">
+                                <span class="badge rounded-pill me-2 mt-1 {% if item.type == 'preference' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ item.type }}
+                                </span>
+                                <div>
+                                    <p class="mb-1">{{ item.description }}</p>
+                                    <small class="text-muted">Evidence: {{ item.evidence }}</small>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <!-- Customer Summary Panel -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Customer Summary</h3>
+            </div>
+            <div class="card-body">
+                <p>{{ preparation.customer_summary }}</p>
+                
+                <div class="mt-3">
+                    <h4 class="h6">Relationship Insights</h4>
+                    <ul class="list-group">
+                        {% for insight in preparation.relationship_insights %}
+                            <li class="list-group-item">
+                                <p class="mb-1">{{ insight.insight }}</p>
+                                <small class="text-muted">Evidence: {{ insight.evidence }}</small>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- History Summary Panel -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Interaction & Purchase History</h3>
+            </div>
+            <div class="card-body">
+                <h4 class="h6">Interaction Summary</h4>
+                <p>{{ preparation.interaction_summary }}</p>
+                
+                <h4 class="h6">Purchase History</h4>
+                <p>{{ preparation.purchase_history_summary }}</p>
+            </div>
+        </div>
+        
+        <!-- Recommendations Panel -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Recommendations</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="accordion" id="recommendationsAccordion">
+                    {% for recommendation in preparation.recommendations %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button {% if loop.index > 1 %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}">
+                                    <div class="d-flex align-items-center justify-content-between w-100 me-3">
+                                        <div>{{ recommendation.topic }}</div>
+                                        <div>
+                                            <span class="badge rounded-pill {% if recommendation.confidence < 0.4 %}bg-danger{% elif recommendation.confidence < 0.7 %}bg-warning{% else %}bg-success{% endif %}">
+                                                {{ (recommendation.confidence * 100) | round(0) }}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ loop.index }}" class="accordion-collapse collapse {% if loop.index == 1 %}show{% endif %}" data-bs-parent="#recommendationsAccordion">
+                                <div class="accordion-body">
+                                    <h5 class="h6">Reasoning</h5>
+                                    <p>{{ recommendation.reasoning }}</p>
+                                    
+                                    <h5 class="h6">Evidence</h5>
+                                    <p>{{ recommendation.evidence }}</p>
+                                    
+                                    <div class="mt-3 border-top pt-3">
+                                        <h5 class="h6">Was this recommendation helpful?</h5>
+                                        <form action="/feedback" method="post" class="d-flex align-items-center">
+                                            <input type="hidden" name="meeting_id" value="{{ meeting.id }}">
+                                            <input type="hidden" name="recommendation_id" value="{{ recommendation.id }}">
+                                            
+                                            <div class="btn-group me-3" role="group">
+                                                <input type="radio" class="btn-check" name="rating" id="rating1{{ loop.index }}" value="1" autocomplete="off">
+                                                <label class="btn btn-outline-danger" for="rating1{{ loop.index }}">Not helpful</label>
+                                                
+                                                <input type="radio" class="btn-check" name="rating" id="rating2{{ loop.index }}" value="2" autocomplete="off">
+                                                <label class="btn btn-outline-warning" for="rating2{{ loop.index }}">Somewhat</label>
+                                                
+                                                <input type="radio" class="btn-check" name="rating" id="rating3{{ loop.index }}" value="3" autocomplete="off">
+                                                <label class="btn btn-outline-success" for="rating3{{ loop.index }}">Very helpful</label>
+                                            </div>
+                                            
+                                            <button type="submit" class="btn btn-sm btn-primary">Submit</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Next Steps Panel -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Suggested Next Steps</h3>
+            </div>
+            <div class="card-body">
+                <ol class="mb-0">
+                    {% for step in preparation.next_steps %}
+                        <li class="mb-2">{{ step }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

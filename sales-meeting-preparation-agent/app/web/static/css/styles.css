@@ -1,0 +1,60 @@
+* Custom styles for the Sales Meeting Preparation Agent */
+
+/* Add some spacing to the page */
+body {
+    padding-bottom: 2rem;
+    background-color: #f8f9fa;
+}
+
+/* Make cards more visually appealing */
+.card {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Custom styles for the progress bars */
+.progress {
+    border-radius: 0.5rem;
+    background-color: #e9ecef;
+}
+
+/* Style for the meeting cards */
+.meeting-card {
+    transition: transform 0.2s;
+}
+
+.meeting-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Style for recommendations */
+.accordion-button:not(.collapsed) {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(13, 110, 253, 0.25);
+}
+
+/* Custom badge styles */
+.badge {
+    font-weight: 500;
+    padding: 0.4em 0.6em;
+}
+
+/* Navbar customization */
+.navbar-brand strong {
+    color: #fff;
+}
+
+/* Footer customization */
+footer {
+    border-top: 1px solid #e9ecef;
+}

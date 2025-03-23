@@ -1,1 +1,1 @@
-# agentic-ai-solutions
+# Agentic-AI-Solutions

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Upcoming Meetings - Sales Preparation Agent{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5">Upcoming Meetings</h1>
+        <p class="lead">View and prepare for your upcoming customer meetings</p>
+    </div>
+</div>
+
+{% if meetings %}
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        {% for meeting in meetings %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge rounded-pill {% if meeting.type == 'Quarterly Review' %}bg-primary{% elif meeting.type == 'Product Consultation' %}bg-success{% elif meeting.type == 'Project Planning' %}bg-warning text-dark{% elif meeting.type == 'Follow-up' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                            {{ meeting.type }}
+                        </span>
+                        <span class="text-muted">{{ meeting.date }} at {{ meeting.time }}</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ meeting.customer_name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ meeting.contact_name }}</h6>
+                        <p class="card-text">{{ meeting.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ meeting.duration_minutes }} minutes | {{ meeting.location }}</small>
+                            <a href="/meeting/{{ meeting.id }}" class="btn btn-primary">Prepare</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <h4 class="alert-heading">No upcoming meetings</h4>
+        <p>You don't have any meetings scheduled in the next 14 days.</p>
+    </div>
+{% endif %}
+{% endblock %}
