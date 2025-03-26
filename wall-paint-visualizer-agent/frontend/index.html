@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wall Paint Visualizer Agent</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2D68C4;
+            --primary-hover: #1E4C99;
+            --secondary-color: #F4F7FC;
+            --dark-color: #333;
+            --light-color: #f8f9fa;
+            --border-radius: 10px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .brand-header {
+            background: linear-gradient(135deg, #2D68C4, #5D8FD9);
+            color: white;
+            padding: 2.5rem 0;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            margin-bottom: 2rem;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .container-custom {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+        }
+        
+        .color-swatch {
+            width: 45px;
+            height: 45px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+            margin: 5px;
+        }
+        
+        .color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .color-swatch.selected {
+            border: 2px solid var(--primary-color);
+            transform: scale(1.1);
+        }
+        
+        .room-preview-container {
+            position: relative;
+            background-color: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 1.5rem;
+        }
+        
+        .room-preview {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+        
+        .upload-container {
+            border: 2px dashed rgba(0, 0, 0, 0.1);
+            border-radius: var(--border-radius);
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+            background-color: white;
+            transition: var(--transition);
+        }
+        
+        .upload-container:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .comparison-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .comparison-card {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            background-color: white;
+            transition: var(--transition);
+        }
+        
+        .comparison-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .comparison-card img {
+            width: 100%;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+        
+        .comparison-card-content {
+            padding: 1.25rem;
+        }
+        
+        .comparison-card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .comparison-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .loading-spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+        }
+        
+        .color-family-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .color-family-button {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            background-color: white;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+            font-size: 0.875rem;
+        }
+        
+        .color-family-button:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .color-family-button.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 50px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(45, 104, 196, 0.2);
+            transition: var(--transition);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(45, 104, 196, 0.25);
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 50px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .form-control {
+            border-radius: 50px;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: none;
+            transition: var(--transition);
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(45, 104, 196, 0.15);
+        }
+        
+        .form-select {
+            border-radius: 50px;
+            padding: 0.75rem 2.25rem 0.75rem 1.25rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: none;
+            transition: var(--transition);
+        }
+        
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(45, 104, 196, 0.15);
+        }
+        
+        .controls-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-top: -20px;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .color-swatches-container {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            background-color: var(--secondary-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .color-detail-container {
+            background-color: var(--secondary-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            transition: var(--transition);
+        }
+        
+        .color-detail-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .color-detail-swatch {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 1rem;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            border: 3px solid white;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding: 0 1rem;
+        }
+        
+        .step {
+            text-align: center;
+            width: 33.333%;
+            position: relative;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: white;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            font-weight: 600;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step.active .step-number {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .step.completed .step-number {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        
+        .step-label {
+            font-size: 0.875rem;
+            color: rgba(0, 0, 0, 0.6);
+        }
+        
+        .step.active .step-label {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .step-connector {
+            position: absolute;
+            top: 20px;
+            height: 2px;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.1);
+            left: -50%;
+            z-index: 1;
+        }
+        
+        .step:first-child .step-connector {
+            display: none;
+        }
+        
+        .step.active .step-connector, .step.completed .step-connector {
+            background-color: var(--primary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .brand-header {
+                padding: 1.5rem 0;
+            }
+            
+            .upload-container {
+                padding: 2rem;
+            }
+            
+            .comparison-view {
+                grid-template-columns: 1fr;
+            }
+            
+            .step-label {
+                font-size: 0.75rem;
+            }
+        }
+        
+        /* Animation and transitions */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <header class="brand-header">
+        <div class="container-custom text-center">
+            <h1 class="display-4 fw-bold mb-2">Wall Paint Visualizer Agent</h1>
+            <p class="lead mb-0">Transform your space with our color visualization tool</p>
+        </div>
+    </header>
+    
+    <div class="container-custom">
+        <div class="step-indicator mb-4">
+            <div class="step active">
+                <div class="step-number">1</div>
+                <div class="step-connector"></div>
+                <div class="step-label">Upload Room Photo</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-connector"></div>
+                <div class="step-label">Choose Paint Color</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-connector"></div>
+                <div class="step-label">Visualize Your Room</div>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <!-- Room Display Area -->
+                <div id="roomDisplayArea">
+                    <div id="uploadContainer" class="upload-container fade-in">
+                        <div class="upload-icon pulse">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                        </div>
+                        <h3 class="mb-3">Upload Your Room Photo</h3>
+                        <p class="text-muted mb-4">Drag and drop your image here or click to select a file</p>
+                        <button class="btn btn-primary">
+                            <i class="bi bi-image me-2"></i>Select Image
+                        </button>
+                        <input type="file" id="roomImageInput" accept="image/*" style="display: none;">
+                    </div>
+                    
+                    <div id="previewContainer" style="display: none;">
+                        <div class="room-preview-container fade-in">
+                            <img id="roomPreview" class="room-preview" src="" alt="Room preview">
+                            
+                            <div class="p-3 text-center">
+                                <div class="spinner-border text-primary loading-spinner" id="loadingSpinner" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="controls-container d-flex align-items-center justify-content-between">
+                            <button id="uploadNewButton" class="btn btn-outline-primary">
+                                <i class="bi bi-arrow-repeat me-1"></i>Change Photo
+                            </button>
+                            
+                            <div class="d-flex flex-fill justify-content-end gap-2">
+                                <div class="flex-fill px-2" style="max-width: 200px;">
+                                    <select id="roomTypeSelect" class="form-select">
+                                        <option value="living room">Living Room</option>
+                                        <option value="bedroom">Bedroom</option>
+                                        <option value="kitchen">Kitchen</option>
+                                        <option value="bathroom">Bathroom</option>
+                                        <option value="office">Home Office</option>
+                                        <option value="dining room">Dining Room</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="flex-fill px-2" style="max-width: 200px;">
+                                    <select id="lightingSelect" class="form-select">
+                                        <option value="natural light">Natural Light</option>
+                                        <option value="warm lighting">Warm Lighting</option>
+                                        <option value="cool lighting">Cool Lighting</option>
+                                        <option value="bright lighting">Bright Lighting</option>
+                                        <option value="dim lighting">Dim Lighting</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comparison View -->
+                <div id="comparisonView" class="comparison-view fade-in" style="display: none;">
+                    <!-- Comparison cards will be added here -->
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Color Selection Panel -->
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-palette-fill me-2 text-primary"></i>
+                        <h4 class="mb-0">Select Paint Color</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Color Family Filter -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Color Family</label>
+                            <div id="colorFamilyFilter" class="color-family-filter">
+                                <button class="color-family-button active" data-family="all">All Colors</button>
+                                <!-- Color family buttons will be added here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Search Box -->
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input type="text" id="colorSearch" class="form-control border-start-0" placeholder="Search colors...">
+                            </div>
+                        </div>
+                        
+                        <!-- Color Swatches -->
+                        <div class="color-swatches-container">
+                            <div id="colorSwatches" class="d-flex flex-wrap">
+                                <!-- Color swatches will be added here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Selected Color Details -->
+                        <div id="selectedColorDetails" class="color-detail-container fade-in" style="display: none;">
+                            <div class="color-detail-header">
+                                <div id="selectedColorSwatch" class="color-detail-swatch"></div>
+                                <div>
+                                    <h5 id="selectedColorName" class="mb-1"></h5>
+                                    <span id="selectedColorHex" class="text-muted"></span>
+                                </div>
+                            </div>
+                            
+                            <p id="selectedColorDescription" class="text-muted mb-4"></p>
+                            
+                            <div class="d-grid gap-2">
+                                <button id="visualizeButton" class="btn btn-primary">
+                                    <i class="bi bi-brush me-2"></i>Visualize This Color
+                                </button>
+                                
+                                <button id="addToComparisonButton" class="btn btn-outline-primary">
+                                    <i class="bi bi-layout-split me-2"></i>Add to Comparison
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tips Card -->
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-lightbulb-fill me-2 text-warning"></i>
+                        <h4 class="mb-0">Painting Tips</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            <li class="mb-2">Consider the lighting in your room - colors appear differently under natural vs. artificial light.</li>
+                            <li class="mb-2">Test multiple colors side-by-side using the comparison feature.</li>
+                            <li>Remember that colors often appear lighter on your walls than they do on swatches.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="py-4 mt-5 bg-light">
+        <div class="container-custom text-center">
+            <p class="text-muted mb-0">© 2025 ABC Paints. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // API endpoint configuration
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // Global state variables
+        let allColors = [];
+        let selectedColor = null;
+        let uploadedImageId = null;
+        let comparisonColors = [];
+        let currentStep = 1;
+        
+        // DOM elements
+        const roomImageInput = document.getElementById('roomImageInput');
+        const uploadContainer = document.getElementById('uploadContainer');
+        const previewContainer = document.getElementById('previewContainer');
+        const roomPreview = document.getElementById('roomPreview');
+        const uploadNewButton = document.getElementById('uploadNewButton');
+        const colorSwatches = document.getElementById('colorSwatches');
+        const selectedColorDetails = document.getElementById('selectedColorDetails');
+        const selectedColorName = document.getElementById('selectedColorName');
+        const selectedColorSwatch = document.getElementById('selectedColorSwatch');
+        const selectedColorHex = document.getElementById('selectedColorHex');
+        const selectedColorDescription = document.getElementById('selectedColorDescription');
+        const visualizeButton = document.getElementById('visualizeButton');
+        const addToComparisonButton = document.getElementById('addToComparisonButton');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const comparisonView = document.getElementById('comparisonView');
+        const colorFamilyFilter = document.getElementById('colorFamilyFilter');
+        const colorSearch = document.getElementById('colorSearch');
+        const roomTypeSelect = document.getElementById('roomTypeSelect');
+        const lightingSelect = document.getElementById('lightingSelect');
+        const steps = document.querySelectorAll('.step');
+        
+        // Event listeners
+        uploadContainer.addEventListener('click', () => roomImageInput.click());
+        roomImageInput.addEventListener('change', handleImageUpload);
+        uploadNewButton.addEventListener('click', () => roomImageInput.click());
+        visualizeButton.addEventListener('click', visualizeRoom);
+        addToComparisonButton.addEventListener('click', addToComparison);
+        colorSearch.addEventListener('input', filterColors);
+        
+        // Upload drop handling
+        uploadContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadContainer.style.borderColor = 'var(--primary-color)';
+            uploadContainer.style.backgroundColor = 'var(--secondary-color)';
+        });
+        
+        uploadContainer.addEventListener('dragleave', () => {
+            uploadContainer.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+            uploadContainer.style.backgroundColor = 'white';
+        });
+        
+        uploadContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadContainer.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+            uploadContainer.style.backgroundColor = 'white';
+            if (e.dataTransfer.files.length) {
+                roomImageInput.files = e.dataTransfer.files;
+                handleImageUpload();
+            }
+        });
+        
+        // Initialize
+        fetchColors();
+        
+        // Update step indicator
+        function updateStep(step) {
+            currentStep = step;
+            
+            steps.forEach((stepEl, index) => {
+                if (index + 1 < step) {
+                    stepEl.classList.remove('active');
+                    stepEl.classList.add('completed');
+                } else if (index + 1 === step) {
+                    stepEl.classList.add('active');
+                    stepEl.classList.remove('completed');
+                } else {
+                    stepEl.classList.remove('active', 'completed');
+                }
+            });
+        }
+        
+        // Fetch colors from API
+        async function fetchColors() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/colors`);
+                
+                if (!response.ok) {
+                    throw new Error(`Error fetching colors: ${response.status}`);
+                }
+                
+                allColors = await response.json();
+                renderColorSwatches();
+                setupColorFamilyFilters();
+            } catch (error) {
+                console.error('Error fetching colors:', error);
+                
+                // Fallback to mock data if API fails
+                allColors = [
+                    {
+                        "id": "NW001",
+                        "name": "Arctic White",
+                        "hex_code": "#F5F5F5",
+                        "rgb": [245, 245, 245],
+                        "family": "Whites",
+                        "description": "A pure, clean white that brightens any room"
+                    },
+                    {
+                        "id": "BL118",
+                        "name": "Ocean Blue",
+                        "hex_code": "#4F84C4",
+                        "rgb": [79, 132, 196],
+                        "family": "Blues",
+                        "description": "A calming medium blue inspired by coastal waters"
+                    },
+                    {
+                        "id": "GN205",
+                        "name": "Sage Meadow",
+                        "hex_code": "#9CAF88",
+                        "rgb": [156, 175, 136],
+                        "family": "Greens", 
+                        "description": "A soft, muted green that brings nature indoors"
+                    },
+                    {
+                        "id": "GY133",
+                        "name": "Metropolitan Gray",
+                        "hex_code": "#C0C0C0",
+                        "rgb": [192, 192, 192],
+                        "family": "Grays",
+                        "description": "A versatile medium gray that complements any décor"
+                    },
+                    {
+                        "id": "RD078",
+                        "name": "Crimson Splendor",
+                        "hex_code": "#C53151",
+                        "rgb": [197, 49, 81],
+                        "family": "Reds",
+                        "description": "A bold, energetic red that makes a statement"
+                    },
+                    {
+                        "id": "YL042",
+                        "name": "Sunlit Meadow",
+                        "hex_code": "#F0E68C",
+                        "rgb": [240, 230, 140],
+                        "family": "Yellows",
+                        "description": "A cheerful, warm yellow that brightens any space"
+                    },
+                    {
+                        "id": "BR157",
+                        "name": "Cinnamon Spice",
+                        "hex_code": "#8B4513",
+                        "rgb": [139, 69, 19],
+                        "family": "Browns",
+                        "description": "A rich, warm brown that creates a cozy atmosphere"
+                    },
+                    {
+                        "id": "BK001",
+                        "name": "Midnight Black",
+                        "hex_code": "#0A0A0A",
+                        "rgb": [10, 10, 10],
+                        "family": "Blacks",
+                        "description": "A deep, true black for dramatic effect"
+                    },
+                    {
+                        "id": "PP091",
+                        "name": "Lavender Dream",
+                        "hex_code": "#C8A2C8",
+                        "rgb": [200, 162, 200],
+                        "family": "Purples",
+                        "description": "A soft, romantic purple with gray undertones"
+                    },
+                    {
+                        "id": "OR064",
+                        "name": "Amber Glow",
+                        "hex_code": "#E49B0F",
+                        "rgb": [228, 155, 15],
+                        "family": "Oranges",
+                        "description": "A vibrant, warm orange with golden undertones"
+                    }
+                ];
+                
+                renderColorSwatches();
+                setupColorFamilyFilters();
+            }
+        }
+        
+        // Render color swatches
+        function renderColorSwatches(filterFamily = 'all', searchTerm = '') {
+            colorSwatches.innerHTML = '';
+            
+            const filteredColors = allColors.filter(color => {
+                const matchesFamily = filterFamily === 'all' || color.family === filterFamily;
+                const matchesSearch = searchTerm === '' || 
+                    color.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    color.description.toLowerCase().includes(searchTerm.toLowerCase());
+                
+                return matchesFamily && matchesSearch;
+            });
+            
+            if (filteredColors.length === 0) {
+                colorSwatches.innerHTML = '<p class="text-center text-muted p-3">No colors found matching your criteria.</p>';
+                return;
+            }
+            
+            filteredColors.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color.hex_code;
+                swatch.dataset.colorId = color.id;
+                swatch.title = color.name;
+                
+                swatch.addEventListener('click', () => selectColor(color));
+                
+                colorSwatches.appendChild(swatch);
+            });
+        }
+        
+        // Setup color family filters
+        function setupColorFamilyFilters() {
+            // Clear existing buttons except "All"
+            const allButton = colorFamilyFilter.querySelector('[data-family="all"]');
+            colorFamilyFilter.innerHTML = '';
+            colorFamilyFilter.appendChild(allButton);
+            
+            // Get unique families
+            const families = [...new Set(allColors.map(color => color.family))];
+            
+            families.forEach(family => {
+                const button = document.createElement('button');
+                button.className = 'color-family-button';
+                button.dataset.family = family;
+                button.textContent = family;
+                
+                button.addEventListener('click', () => {
+                    // Update active button
+                    document.querySelectorAll('.color-family-button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    button.classList.add('active');
+                    
+                    // Filter colors
+                    renderColorSwatches(family, colorSearch.value);
+                });
+                
+                colorFamilyFilter.appendChild(button);
+            });
+        }
+        
+        // Filter colors based on search term
+        function filterColors() {
+            const activeFamily = document.querySelector('.color-family-button.active').dataset.family;
+            renderColorSwatches(activeFamily, colorSearch.value);
+        }
+        
+        // Select a color
+        function selectColor(color) {
+            console.log("Selecting color:", color);
+            selectedColor = color;
+            updateStep(2);
+            
+            // Update selected color UI
+            selectedColorDetails.style.display = 'block';
+            selectedColorName.textContent = color.name;
+            selectedColorSwatch.style.backgroundColor = color.hex_code;
+            selectedColorHex.textContent = color.hex_code;
+            selectedColorDescription.textContent = color.description;
+            
+            // Apply animation class and remove after animation completes
+            selectedColorDetails.classList.add('fade-in');
+            setTimeout(() => {
+                selectedColorDetails.classList.remove('fade-in');
+            }, 500);
+            
+            // Update swatch selection styling
+            document.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.classList.remove('selected');
+                if (swatch.dataset.colorId === color.id) {
+                    swatch.classList.add('selected');
+                }
+            });
+        }
+        
+        // Handle image upload
+        async function handleImageUpload() {
+            if (!roomImageInput.files || !roomImageInput.files[0]) return;
+            
+            const file = roomImageInput.files[0];
+            
+            // Preview the image
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                roomPreview.src = e.target.result;
+                uploadContainer.style.display = 'none';
+                previewContainer.style.display = 'block';
+                
+                // Apply animation
+                previewContainer.classList.add('fade-in');
+                setTimeout(() => {
+                    previewContainer.classList.remove('fade-in');
+                }, 500);
+            };
+            reader.readAsDataURL(file);
+            
+            updateStep(1);
+            
+            // Upload the file to the server
+            try {
+                loadingSpinner.style.display = 'block';
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch(`${API_BASE_URL}/upload`, {
+                   method: 'POST',
+                   body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Upload failed: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                uploadedImageId = data.image_id;
+                console.log('Image uploaded with ID:', uploadedImageId);
+                
+                loadingSpinner.style.display = 'none';
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                loadingSpinner.style.display = 'none';
+                
+                // Fallback behavior for demo purposes
+                uploadedImageId = 'mock-image-id-' + Date.now();
+                console.log('Using fallback image ID:', uploadedImageId);
+            }
+        }
+        
+        // Visualize room with selected color
+        async function visualizeRoom() {
+            if (!uploadedImageId || !selectedColor) {
+                alert('Please upload an image and select a color first.');
+                return;
+            }
+            
+            loadingSpinner.style.display = 'block';
+            updateStep(3);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/visualize`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image_id: uploadedImageId,
+                        paint_color_id: selectedColor.id,
+                        room_type: roomTypeSelect.value,
+                        lighting_condition: lightingSelect.value
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Visualization failed: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Visualization created:', data);
+                
+                // Update the preview image
+                roomPreview.src = `${API_BASE_URL}/results/${data.visualization_id}`;
+                
+                // Add fade-in animation
+                roomPreview.classList.add('fade-in');
+                setTimeout(() => {
+                    roomPreview.classList.remove('fade-in');
+                }, 500);
+                
+                loadingSpinner.style.display = 'none';
+            } catch (error) {
+                console.error('Error visualizing room:', error);
+                loadingSpinner.style.display = 'none';
+                
+                // Fallback to client-side simulation for demo purposes
+                simulateColorChange(selectedColor);
+            }
+        }
+        
+        // Add color to comparison
+        function addToComparison() {
+            if (!uploadedImageId || !selectedColor) {
+                alert('Please upload an image and select a color first.');
+                return;
+            }
+            
+            // Check if already in comparison
+            if (comparisonColors.some(c => c.id === selectedColor.id)) {
+                alert('This color is already in the comparison view.');
+                return;
+            }
+            
+            // Add to comparison array
+            comparisonColors.push(selectedColor);
+            
+            // Show comparison view
+            updateComparisonView();
+        }
+        
+        // Update comparison view
+        async function updateComparisonView() {
+            if (comparisonColors.length === 0) {
+                comparisonView.style.display = 'none';
+                return;
+            }
+            
+            comparisonView.style.display = 'grid';
+            comparisonView.innerHTML = '';
+            
+            for (const color of comparisonColors) {
+                const card = document.createElement('div');
+                card.className = 'comparison-card fade-in';
+                
+                // Add a placeholder while loading
+                card.innerHTML = `
+                    <div class="p-4 text-center">
+                        <div class="comparison-card-header mb-2">
+                            <div class="comparison-swatch" style="background-color: ${color.hex_code}"></div>
+                            <h5 class="mb-0">${color.name}</h5>
+                        </div>
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                `;
+                
+                comparisonView.appendChild(card);
+                
+                // Try to get visualization from server
+                try {
+                    const response = await fetch(`${API_BASE_URL}/visualize`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            image_id: uploadedImageId,
+                            paint_color_id: color.id,
+                            room_type: roomTypeSelect.value,
+                            lighting_condition: lightingSelect.value
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const resultImg = document.createElement('img');
+                        resultImg.src = `${API_BASE_URL}/results/${data.visualization_id}`;
+                        resultImg.alt = `${color.name} visualization`;
+                        resultImg.className = 'comparison-image';
+                        
+                        resultImg.onload = () => {
+                            // Replace spinner with image
+                            card.innerHTML = `
+                                <div class="comparison-card-content">
+                                    <div class="comparison-card-header">
+                                        <div class="comparison-swatch" style="background-color: ${color.hex_code}"></div>
+                                        <h5 class="mb-0">${color.name}</h5>
+                                    </div>
+                                    <small class="text-muted d-block mb-3">${color.hex_code}</small>
+                                    <button class="btn btn-sm btn-outline-danger remove-comparison" data-color-id="${color.id}">
+                                        <i class="bi bi-x-circle me-1"></i>Remove
+                                    </button>
+                                </div>
+                            `;
+                            card.insertBefore(resultImg, card.firstChild);
+                            
+                            // Add event listener to remove button
+                            card.querySelector('.remove-comparison').addEventListener('click', () => {
+                                comparisonColors = comparisonColors.filter(c => c.id !== color.id);
+                                updateComparisonView();
+                            });
+                        };
+                    } else {
+                        throw new Error('Visualization failed');
+                    }
+                } catch (error) {
+                    console.error('Error with comparison visualization:', error);
+                    
+                    // Fallback to client-side simulation
+                    const resultImg = await simulateColorChangeForComparison(color);
+                    
+                    card.innerHTML = `
+                        <div class="comparison-card-content">
+                            <div class="comparison-card-header">
+                                <div class="comparison-swatch" style="background-color: ${color.hex_code}"></div>
+                                <h5 class="mb-0">${color.name}</h5>
+                            </div>
+                            <small class="text-muted d-block mb-3">${color.hex_code}</small>
+                            <button class="btn btn-sm btn-outline-danger remove-comparison" data-color-id="${color.id}">
+                                <i class="bi bi-x-circle me-1"></i>Remove
+                            </button>
+                        </div>
+                    `;
+                    card.insertBefore(resultImg, card.firstChild);
+                    
+                    // Add event listener to remove button
+                    card.querySelector('.remove-comparison').addEventListener('click', () => {
+                        comparisonColors = comparisonColors.filter(c => c.id !== color.id);
+                        updateComparisonView();
+                    });
+                }
+            }
+        }
+        
+        // Simulate color change (for fallback)
+        function simulateColorChange(color) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                
+                // Apply a simple color overlay
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = color.hex_code;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                roomPreview.src = canvas.toDataURL();
+                
+                // Add fade-in animation
+                roomPreview.classList.add('fade-in');
+                setTimeout(() => {
+                    roomPreview.classList.remove('fade-in');
+                }, 500);
+            };
+            
+            img.src = roomPreview.src;
+        }
+        
+        // Simulate color change for comparison (for fallback)
+        async function simulateColorChangeForComparison(color) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Apply a simple color overlay
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillStyle = color.hex_code;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    const resultImg = document.createElement('img');
+                    resultImg.src = canvas.toDataURL();
+                    resultImg.className = 'comparison-image';
+                    resolve(resultImg);
+                };
+                
+                img.src = roomPreview.src;
+            });
+        }
+    </script>
+</body>
+</html>
