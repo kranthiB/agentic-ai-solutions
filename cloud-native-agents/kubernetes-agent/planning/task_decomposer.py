@@ -4,7 +4,7 @@ import time
 import uuid
 import yaml
 import asyncio
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from autogen import AssistantAgent, LLMConfig 
 from utils.prompt_templates import TASK_DECOMPOSITION_INSTRUCTION , TASK_DECOMPOSER_SYSTEM_PROMPT
@@ -336,3 +336,16 @@ class TaskDecomposer:
         self.metrics.record_tool_result("fallback_decomposition", True, goal_category)
 
         return tasks
+
+
+# Singleton instance
+_task_decomposer: Optional[TaskDecomposer] = None
+
+def get_task_decomposer(config_path: str) -> TaskDecomposer:
+    global _task_decomposer
+    if _task_decomposer is None:
+        if config_path is None:
+            _task_decomposer = TaskDecomposer()
+        else:
+            _task_decomposer = TaskDecomposer(config_path=config_path)
+    return _task_decomposer

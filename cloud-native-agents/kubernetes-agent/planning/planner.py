@@ -5,7 +5,7 @@ import time
 from typing import Optional
 import uuid
 import yaml
-from planning.task_decomposer import TaskDecomposer
+from planning.task_decomposer import get_task_decomposer
 from reflection.plan_improver import PlanImprover
 from monitoring.agent_logger import get_logger
 from monitoring.metrics_collector import get_metrics_collector
@@ -22,7 +22,7 @@ class Planner:
         self.default_priority_gap = planning_config["planner"].get(
             "default_priority_gap", 1
         )
-        self.decomposer = TaskDecomposer(config_path=config_path)
+        self.decomposer = get_task_decomposer(config_path=config_path)
         self.improver = PlanImprover()  # 🧠 Plan improver initialized
         self.logger = get_logger(__name__)
         self.metrics = get_metrics_collector()
