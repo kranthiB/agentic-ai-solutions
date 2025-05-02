@@ -47,7 +47,7 @@ class ConversationManager:
             # Planner and Executor
             self.logger.info("Creating Planner and TaskExecutor")
             self.planner = get_planner()
-            self.executor = get_task_executor()
+            self.executor = get_task_executor(config_path=None)
 
             # Memory Managers
             self.logger.info("Initializing Memory components")

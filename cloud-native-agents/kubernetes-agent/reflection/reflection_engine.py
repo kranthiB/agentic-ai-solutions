@@ -18,7 +18,7 @@ class ReflectionEngine:
         self.audit = get_audit_logger()
         self.long_term_memory = get_long_term_memory()
         self.retry_policy = get_retry_policy(max_retries=max_retries)
-        self.task_executor = get_task_executor()  # <-- use your actual executor
+        self.task_executor = get_task_executor(config_path=None)  # <-- use your actual executor
 
     async def reflect_on_tasks(
         self,
