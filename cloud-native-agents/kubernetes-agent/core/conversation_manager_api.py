@@ -7,6 +7,7 @@ This version adds WebSocket status updates for frontend integration.
 import datetime
 import time
 import traceback
+from typing import Optional
 import uuid
 
 # Import original conversation manager
@@ -710,3 +711,13 @@ class ConversationManagerAPI:
         combined_sections.append(metrics_summary)
 
         return "\n---\n\n".join(combined_sections)
+    
+# Singleton instance
+_conversation_manager_api: Optional[ConversationManagerAPI] = None
+
+
+def get_conversation_manager_api() -> ConversationManagerAPI:
+    global _conversation_manager_api
+    if _conversation_manager_api is None:
+        _conversation_manager_api = ConversationManagerAPI()
+    return _conversation_manager_api

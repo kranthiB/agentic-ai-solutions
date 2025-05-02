@@ -263,10 +263,10 @@ async def process_conversation(conversation_id: str, goal: str, goal_category: s
         )
         
         # Import here to avoid circular imports
-        from core.conversation_manager_api import ConversationManagerAPI
+        from core.conversation_manager_api import get_conversation_manager_api
         
         # Create conversation manager
-        manager = ConversationManagerAPI()
+        manager = get_conversation_manager_api()
         
         # Run conversation (this will take time)
         result = await manager.run_conversation(goal, goal_category, conversation_id)
@@ -318,10 +318,10 @@ async def process_message(conversation_id: str, message_id: str, content: str):
         await connection_manager.broadcast_agent_thinking(conversation_id, True)
         
         # Import here to avoid circular imports
-        from core.conversation_manager_api import ConversationManagerAPI
+        from core.conversation_manager_api import get_conversation_manager_api
         
         # Create conversation manager
-        manager = ConversationManagerAPI()
+        manager = get_conversation_manager_api()
         
         # Get conversation details
         conversation = await conversation_service.get_conversation(conversation_id)
