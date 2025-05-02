@@ -1,6 +1,7 @@
 # memory/long_term_memory.py
 
 from datetime import datetime, timezone
+from typing import Optional
 from memory.memory_store import MemoryStore
 
 class LongTermMemory:
@@ -13,6 +14,7 @@ class LongTermMemory:
         """Store a full plan execution summary."""
         print("plan_response")
         print(plan_response)
+
 
         summary_record = {
             "plan_id": plan_response["plan_id"],
@@ -62,3 +64,14 @@ class LongTermMemory:
         )
 
         print(f"✅ Plan summary stored into long-term memory for session {session_id}")
+
+
+# Singleton instance
+_long_term_memory: Optional[LongTermMemory] = None
+
+
+def get_long_term_memory() -> LongTermMemory:
+    global _long_term_memory
+    if _long_term_memory is None:
+        _long_term_memory = LongTermMemory()
+    return _long_term_memory

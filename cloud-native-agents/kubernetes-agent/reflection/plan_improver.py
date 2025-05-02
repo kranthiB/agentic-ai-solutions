@@ -1,13 +1,13 @@
 # kubernetes_agent/planning/plan_improver.py
 
 from typing import Dict
-from memory.long_term_memory import LongTermMemory
+from memory.long_term_memory import get_long_term_memory
 from monitoring.agent_logger import get_logger
 
 class PlanImprover:
     def __init__(self):
         self.logger = get_logger(__name__)
-        self.memory = LongTermMemory()
+        self.memory = get_long_term_memory()
 
     async def improve_plan(
         self,

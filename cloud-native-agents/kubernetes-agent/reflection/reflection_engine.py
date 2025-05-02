@@ -7,7 +7,7 @@ from typing import List, Dict
 from monitoring.agent_logger import get_logger
 from monitoring.metrics_collector import get_metrics_collector
 from monitoring.event_audit_log import get_audit_logger
-from memory.long_term_memory import LongTermMemory
+from memory.long_term_memory import get_long_term_memory
 from reflection.retry_policy import RetryPolicy
 from planning.task_executor import TaskExecutor  # <-- updated
 
@@ -16,7 +16,7 @@ class ReflectionEngine:
         self.logger = get_logger(__name__)
         self.metrics = get_metrics_collector()
         self.audit = get_audit_logger()
-        self.long_term_memory = LongTermMemory()
+        self.long_term_memory = get_long_term_memory()
         self.retry_policy = RetryPolicy(max_retries=max_retries)
         self.task_executor = TaskExecutor()  # <-- use your actual executor
 
