@@ -327,8 +327,24 @@
             white-space: nowrap;
             color: var(--text-primary);
             border: 1px solid transparent;
+            position: relative;
         }
         
+        .conversation-delete {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            padding: 6px;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            opacity: 0;
+            transition: var(--transition-fast);
+        }
+
         .conversation-icon {
             color: var(--text-tertiary);
             font-size: 0.9rem;
@@ -358,6 +374,15 @@
         
         .conversation-item:hover {
             background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .conversation-item:hover .conversation-delete {
+            opacity: 1;
+        }
+
+        .conversation-delete:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
         }
         
         .conversation-item.active {
@@ -1670,6 +1695,119 @@
         .error-close:hover {
             background-color: rgba(239, 68, 68, 0.1);
         }
+
+        .custom-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .custom-dialog {
+            background-color: var(--card-bg);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            width: 380px;
+            max-width: 90vw;
+            animation: scaleIn 0.3s ease-out;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .custom-dialog-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background-color: rgba(239, 68, 68, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px auto 16px;
+        }
+
+        .custom-dialog-icon i {
+            font-size: 32px;
+            color: var(--error-color);
+        }
+
+        .custom-dialog-header {
+            text-align: center;
+            padding: 0 24px;
+        }
+
+        .custom-dialog-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .custom-dialog-message {
+            font-size: 0.9375rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .custom-dialog-actions {
+            display: flex;
+            padding: 16px 24px 24px;
+            gap: 12px;
+        }
+
+        .custom-dialog-button {
+            flex: 1;
+            padding: 12px;
+            border-radius: var(--radius-lg);
+            font-weight: 500;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            text-align: center;
+            border: none;
+        }
+
+        .custom-dialog-button-cancel {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .custom-dialog-button-cancel:hover {
+            background-color: var(--bg-color);
+        }
+
+        .custom-dialog-button-confirm {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .custom-dialog-button-confirm:hover {
+            background-color: #dc2626; /* Darker red */
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(-20px); }
+        }
         
         /* Responsive Adjustments */
         @media (max-width: 576px) {
@@ -2345,18 +2483,30 @@
                         item.className = 'conversation-item';
                         item.dataset.id = conv.id;
                         
-                        // Get preview from first few words of goal
-                        const preview = truncateText(conv.goal, 40);
-                        
                         item.innerHTML = `
                             <i class="fas fa-comment conversation-icon"></i>
                             <div class="conversation-details">
                                 <div class="conversation-title">${escapeHtml(truncateText(conv.goal, 24))}</div>
-                                <div class="conversation-preview">${escapeHtml(preview)}</div>
+                                <div class="conversation-preview">${escapeHtml(truncateText(conv.goal, 40))}</div>
                             </div>
+                            <button class="conversation-delete" title="Delete conversation" data-id="${conv.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         `;
 
-                        item.addEventListener('click', () => loadConversation(conv.id));
+                        // Add event listener for loading the conversation
+                        item.addEventListener('click', (e) => {
+                            // Don't load conversation if the delete button was clicked
+                            if (e.target.closest('.conversation-delete')) return;
+                            loadConversation(conv.id);
+                        });
+
+                        // Add event listener for the delete button
+                        const deleteBtn = item.querySelector('.conversation-delete');
+                        deleteBtn.addEventListener('click', (e) => {
+                            e.stopPropagation(); // Prevent conversation loading
+                            deleteConversation(conv.id);
+                        });
 
                         conversationList.appendChild(item);
                     });
@@ -2500,6 +2650,165 @@
                 console.error('Error starting conversation:', error);
                 updateStatus('error', 'Error starting conversation');
                 showError('Failed to start conversation. Please try again.');
+            }
+        }
+
+        // Delete a conversation
+        async function deleteConversation(conversationId) {
+            // Create and display custom confirmation dialog
+            const dialogPromise = new Promise((resolve) => {
+                const dialogOverlay = document.createElement('div');
+                dialogOverlay.className = 'custom-dialog-overlay';
+                
+                const dialogContent = document.createElement('div');
+                dialogContent.className = 'custom-dialog';
+                
+                dialogContent.innerHTML = `
+                    <div class="custom-dialog-icon">
+                        <i class="fas fa-trash-alt"></i>
+                    </div>
+                    <div class="custom-dialog-header">
+                        <div class="custom-dialog-title">Delete Conversation</div>
+                        <div class="custom-dialog-message">
+                            This will permanently delete this conversation and cannot be undone.
+                        </div>
+                    </div>
+                    <div class="custom-dialog-actions">
+                        <button class="custom-dialog-button custom-dialog-button-cancel">Cancel</button>
+                        <button class="custom-dialog-button custom-dialog-button-confirm">Delete</button>
+                    </div>
+                `;
+                
+                dialogOverlay.appendChild(dialogContent);
+                document.body.appendChild(dialogOverlay);
+                
+                // Add event listeners
+                const cancelButton = dialogContent.querySelector('.custom-dialog-button-cancel');
+                const confirmButton = dialogContent.querySelector('.custom-dialog-button-confirm');
+                
+                cancelButton.addEventListener('click', () => {
+                    dialogOverlay.remove();
+                    resolve(false);
+                });
+                
+                confirmButton.addEventListener('click', () => {
+                    dialogOverlay.remove();
+                    resolve(true);
+                });
+                
+                // Close on outside click
+                dialogOverlay.addEventListener('click', (e) => {
+                    if (e.target === dialogOverlay) {
+                        dialogOverlay.remove();
+                        resolve(false);
+                    }
+                });
+                
+                // Close on Escape key
+                document.addEventListener('keydown', function escapeHandler(e) {
+                    if (e.key === 'Escape') {
+                        document.removeEventListener('keydown', escapeHandler);
+                        dialogOverlay.remove();
+                        resolve(false);
+                    }
+                });
+                
+                // Focus the cancel button (safer default)
+                cancelButton.focus();
+            });
+            
+            // Wait for user decision
+            const userConfirmed = await dialogPromise;
+            
+            if (!userConfirmed) return;
+            
+            try {
+                updateStatus('connecting', 'Deleting conversation...');
+                
+                const response = await fetch(`${API_BASE_URL}conversations/${conversationId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    // Remove from UI
+                    const item = document.querySelector(`.conversation-item[data-id="${conversationId}"]`);
+                    if (item) {
+                        // Add fade-out animation
+                        item.style.animation = 'fadeOut 0.3s forwards';
+                        // Remove after animation completes
+                        setTimeout(() => item.remove(), 300);
+                    }
+                    
+                    // If the deleted conversation was the active one, clear the messages area
+                    if (currentConversationId === conversationId) {
+                        currentConversationId = null;
+                        
+                        // Fade out existing content
+                        messagesContainer.style.opacity = '0';
+                        messagesContainer.style.transition = 'opacity 0.3s ease';
+                        
+                        // After fade out, replace with welcome message
+                        setTimeout(() => {
+                            messagesContainer.innerHTML = `
+                                <div class="welcome-message">
+                                    <div class="welcome-icon">
+                                        <i class="fas fa-cubes"></i>
+                                    </div>
+                                    <h2 class="welcome-title">Welcome to Kubernetes AI Agent</h2>
+                                    <p class="welcome-text">
+                                        I'm your Kubernetes assistant, ready to help manage and troubleshoot your clusters.
+                                        Ask me anything about Kubernetes deployments, services, pods, or infrastructure!
+                                    </p>
+                                    
+                                    <div class="welcome-suggestions">
+                                        <div class="welcome-suggestion" onclick="suggestQuestion('How do I scale my deployment?')">
+                                            <div class="suggestion-title">How do I scale my deployment?</div>
+                                            <div class="suggestion-desc">Learn horizontal scaling options for your workloads</div>
+                                        </div>
+                                        <div class="welcome-suggestion" onclick="suggestQuestion('Debug why my pod is stuck in pending state')">
+                                            <div class="suggestion-title">Debug why my pod is stuck in pending state</div>
+                                            <div class="suggestion-desc">Common reasons and troubleshooting steps</div>
+                                        </div>
+                                        <div class="welcome-suggestion" onclick="suggestQuestion('How to set up monitoring for my cluster?')">
+                                            <div class="suggestion-title">How to set up monitoring for my cluster?</div>
+                                            <div class="suggestion-desc">Options for observability and monitoring</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Fade in the new content
+                            messagesContainer.style.opacity = '1';
+                        }, 300);
+                    }
+                    
+                    // If no conversations left, show the "No conversations yet" message
+                    const remainingItems = document.querySelectorAll('.conversation-item:not([style*="animation"])');
+                    if (remainingItems.length === 0) {
+                        // Add with animation after a small delay
+                        setTimeout(() => {
+                            conversationList.innerHTML = `
+                                <div class="conversation-item" style="animation: fadeIn 0.3s;">
+                                    <i class="fas fa-comment conversation-icon"></i>
+                                    <div class="conversation-details">
+                                        <div class="conversation-title">No conversations yet</div>
+                                        <div class="conversation-preview">Start a new conversation</div>
+                                    </div>
+                                </div>
+                            `;
+                        }, 300);
+                    }
+                    
+                    updateStatus('idle', 'Conversation deleted');
+                    showToast('Conversation deleted successfully');
+                } else {
+                    updateStatus('error', 'Error deleting conversation');
+                    showError('Failed to delete conversation. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error deleting conversation:', error);
+                updateStatus('error', 'Error deleting conversation');
+                showError('Failed to delete conversation. Please try again.');
             }
         }
 
