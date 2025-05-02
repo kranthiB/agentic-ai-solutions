@@ -1,6 +1,7 @@
 # planning/task_executor.py
 
 import time
+from typing import Optional
 import yaml
 import traceback
 import datetime
@@ -314,3 +315,15 @@ class TaskExecutor:
                 "error_type": error_type,
                 "goal_category": goal_category
             }
+        
+# Singleton instance
+_task_executor: Optional[TaskExecutor] = None
+
+def get_task_executor(config_path: str) -> TaskExecutor:
+    global _task_executor
+    if _task_executor is None:
+        if config_path is None:
+            _task_executor = TaskExecutor()
+        else:
+            _task_executor = TaskExecutor(config_path=config_path)
+    return _task_executor

@@ -5,7 +5,7 @@ import traceback
 import uuid
 from core.agent import get_kubernetes_agent
 from planning.planner import get_planner
-from planning.task_executor import TaskExecutor
+from planning.task_executor import get_task_executor
 from feedback_learning.feedback_collector import FeedbackCollector
 from feedback_learning.feedback_store import FeedbackStore
 from feedback_learning.learning_manager import LearningManager
@@ -47,7 +47,7 @@ class ConversationManager:
             # Planner and Executor
             self.logger.info("Creating Planner and TaskExecutor")
             self.planner = get_planner()
-            self.executor = TaskExecutor()
+            self.executor = get_task_executor()
 
             # Memory Managers
             self.logger.info("Initializing Memory components")

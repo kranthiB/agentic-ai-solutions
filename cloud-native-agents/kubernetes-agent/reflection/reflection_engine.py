@@ -9,7 +9,7 @@ from monitoring.metrics_collector import get_metrics_collector
 from monitoring.event_audit_log import get_audit_logger
 from memory.long_term_memory import get_long_term_memory
 from reflection.retry_policy import RetryPolicy
-from planning.task_executor import TaskExecutor  # <-- updated
+from planning.task_executor import get_task_executor  # <-- updated
 
 class ReflectionEngine:
     def __init__(self, max_retries: int = 2):
@@ -18,7 +18,7 @@ class ReflectionEngine:
         self.audit = get_audit_logger()
         self.long_term_memory = get_long_term_memory()
         self.retry_policy = RetryPolicy(max_retries=max_retries)
-        self.task_executor = TaskExecutor()  # <-- use your actual executor
+        self.task_executor = get_task_executor()  # <-- use your actual executor
 
     async def reflect_on_tasks(
         self,
