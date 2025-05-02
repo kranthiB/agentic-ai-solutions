@@ -1,0 +1,3566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Kubernetes AI Agent - Enhanced Experience</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.2.4/mermaid.min.css" rel="stylesheet">
+    <style>
+        :root {
+            /* Color palette - Light mode */
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --accent-color: #818cf8;
+            --accent-light: #e0e7ff;
+            --bg-color: #f9fafb;
+            --bg-secondary: #f3f4f6;
+            --card-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --border-hover: #d1d5db;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --success-color: #10b981;
+            --success-light: #d1fae5;
+            --warning-color: #f59e0b;
+            --warning-light: #fef3c7;
+            --error-color: #ef4444;
+            --error-light: #fee2e2;
+            --info-color: #3b82f6;
+            --info-light: #dbeafe;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+            
+            /* Transitions */
+            --transition-fast: all 0.15s ease;
+            --transition-normal: all 0.25s ease;
+            --transition-slow: all 0.4s ease;
+            
+            /* Border radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-full: 9999px;
+            
+            /* Typography */
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            
+            /* Spacing */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --space-10: 2.5rem;
+            --space-12: 3rem;
+            
+            /* Z-index */
+            --z-dropdown: 100;
+            --z-sticky: 200;
+            --z-fixed: 300;
+            --z-modal: 400;
+            --z-tooltip: 500;
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #111827;
+                --bg-secondary: #1f2937;
+                --card-bg: #1f2937;
+                --border-color: #374151;
+                --border-hover: #4b5563;
+                --text-primary: #f9fafb;
+                --text-secondary: #d1d5db;
+                --text-tertiary: #9ca3af;
+                --accent-light: #3730a3;
+                --success-light: #064e3b;
+                --warning-light: #78350f;
+                --error-light: #7f1d1d;
+                --info-light: #1e3a8a;
+            }
+        }
+
+        /* Manual theme switching */
+        :root.dark-theme {
+            --bg-color: #111827;
+            --bg-secondary: #1f2937;
+            --card-bg: #1f2937;
+            --border-color: #374151;
+            --border-hover: #4b5563;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-tertiary: #9ca3af;
+            --accent-light: #3730a3;
+            --success-light: #064e3b;
+            --warning-light: #78350f;
+            --error-light: #7f1d1d;
+            --info-light: #1e3a8a;
+        }
+
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            font-size: 16px;
+            overflow: hidden;
+            transition: var(--transition-normal);
+        }
+        
+        /* Layout */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            grid-template-rows: 100vh;
+            transition: var(--transition-normal);
+        }
+        
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 300px 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: 100vh;
+                overflow: hidden;
+            }
+            
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                bottom: 0;
+                width: 85%;
+                max-width: 350px;
+                z-index: var(--z-fixed);
+                transition: var(--transition-normal);
+                box-shadow: var(--shadow-lg);
+            }
+            
+            .sidebar.active {
+                left: 0;
+            }
+            
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: calc(var(--z-fixed) - 1);
+                backdrop-filter: blur(2px);
+            }
+            
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background-color: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+            transition: var(--transition-normal);
+            overflow: hidden;
+        }
+        
+        .sidebar-header {
+            padding: var(--space-4) var(--space-5);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .app-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        
+        .logo-icon {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+        
+        .sidebar-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+        
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.125rem;
+            padding: var(--space-2);
+            border-radius: var(--radius-md);
+            transition: var(--transition-fast);
+        }
+        
+        .theme-toggle:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+        }
+        
+        .mobile-close {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.25rem;
+            padding: var(--space-2);
+            border-radius: var(--radius-md);
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-close {
+                display: block;
+            }
+        }
+        
+        .new-chat-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            padding: var(--space-4) var(--space-5);
+            margin: var(--space-5);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .new-chat-button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .new-chat-button:active {
+            transform: translateY(0);
+        }
+        
+        .sidebar-heading {
+            padding: var(--space-4) var(--space-5) var(--space-2);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .conversation-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 var(--space-3);
+        }
+        
+        .conversation-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .conversation-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .conversation-list::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: var(--radius-full);
+        }
+        
+        .conversation-item {
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-2);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-size: 0.9375rem;
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-3);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-primary);
+            border: 1px solid transparent;
+        }
+        
+        .conversation-icon {
+            color: var(--text-tertiary);
+            font-size: 0.9rem;
+            padding-top: 0.1rem;
+        }
+        
+        .conversation-details {
+            overflow: hidden;
+            flex: 1;
+        }
+        
+        .conversation-title {
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .conversation-preview {
+            font-size: 0.8125rem;
+            color: var(--text-tertiary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-top: var(--space-1);
+        }
+        
+        .conversation-item:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        
+        .conversation-item.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .conversation-item.active .conversation-icon,
+        .conversation-item.active .conversation-preview {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .sidebar-footer {
+            padding: var(--space-4) var(--space-5);
+            border-top: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .sidebar-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .sidebar-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Chat Container */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            padding: var(--space-4) var(--space-6);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--card-bg);
+            z-index: var(--z-sticky);
+        }
+        
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        
+        .header-icon {
+            color: var(--primary-color);
+            font-size: 1.25rem;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+        
+        .header-button {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: var(--space-2);
+            border-radius: var(--radius-md);
+            transition: var(--transition-fast);
+        }
+        
+        .header-button:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+        }
+        
+        .mobile-menu-button {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.25rem;
+            padding: var(--space-2);
+            border-radius: var(--radius-md);
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu-button {
+                display: block;
+            }
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-md);
+            background-color: var(--bg-secondary);
+        }
+        
+        .status-dot {
+            height: 8px;
+            width: 8px;
+            border-radius: var(--radius-full);
+            flex-shrink: 0;
+        }
+        
+        .status-dot.idle {
+            background-color: var(--success-color);
+            box-shadow: 0 0 0 2px var(--success-light);
+        }
+        
+        .status-dot.typing {
+            background-color: var(--primary-color);
+            box-shadow: 0 0 0 2px var(--info-light);
+            position: relative;
+        }
+        
+        .status-dot.typing::before,
+        .status-dot.typing::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            opacity: 0.7;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-dot.typing::before {
+            left: -12px;
+            animation-delay: -0.3s;
+        }
+        
+        .status-dot.typing::after {
+            left: 12px;
+            animation-delay: -0.6s;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { 
+                transform: scale(1); 
+                opacity: 0.7;
+            }
+            50% { 
+                transform: scale(1.2); 
+                opacity: 1;
+            }
+        }
+        
+        .status-dot.error {
+            background-color: var(--error-color);
+            box-shadow: 0 0 0 2px var(--error-light);
+        }
+        
+        /* Messages Area */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-5) var(--space-6);
+            scroll-behavior: smooth;
+            background-color: var(--bg-color);
+        }
+        
+        .messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .messages::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: var(--radius-full);
+        }
+        
+        .messages::-webkit-scrollbar-thumb:hover {
+            background-color: var(--border-hover);
+        }
+        
+        .message {
+            margin-bottom: var(--space-6);
+            display: flex;
+            align-items: flex-start;
+            animation: fadeIn 0.3s ease-out;
+            position: relative;
+        }
+        
+        .message:hover .message-actions {
+            opacity: 1;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .user .avatar {
+            background-color: var(--primary-color);
+            color: white;
+            order: 2;
+            margin-left: var(--space-4);
+        }
+        
+        .agent .avatar {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            margin-right: var(--space-4);
+        }
+        
+        .message-bubble {
+            max-width: calc(100% - 100px);
+            position: relative;
+        }
+        
+        @media (max-width: 768px) {
+            .message-bubble {
+                max-width: calc(100% - 60px);
+            }
+        }
+        
+        .message-content {
+            padding: var(--space-4) var(--space-5);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition-fast);
+            overflow: hidden;
+        }
+        
+        .message-content:hover {
+            box-shadow: var(--shadow-md);
+        }
+        
+        .user .message-content {
+            background-color: var(--primary-color);
+            color: white;
+            border-top-right-radius: var(--space-1);
+        }
+        
+        .agent .message-content {
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-top-left-radius: var(--space-1);
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            margin-top: var(--space-2);
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+        }
+        
+        .user .message-time {
+            color: rgba(255, 255, 255, 0.8);
+            justify-content: flex-end;
+        }
+        
+        .message-actions {
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            display: flex;
+            gap: var(--space-1);
+            opacity: 0;
+            transition: var(--transition-fast);
+            background-color: var(--card-bg);
+            border-radius: var(--radius-md);
+            padding: var(--space-1);
+            box-shadow: var(--shadow-md);
+            z-index: 10;
+        }
+        
+        .agent .message-actions {
+            right: 10px;
+        }
+        
+        .user .message-actions {
+            right: 50px;
+        }
+        
+        .message-action-button {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.875rem;
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
+            transition: var(--transition-fast);
+        }
+        
+        .message-action-button:hover {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        .message-feedback {
+            display: flex;
+            gap: var(--space-2);
+            margin-top: var(--space-2);
+            opacity: 0;
+            transition: var(--transition-fast);
+        }
+        
+        .agent .message-content:hover + .message-feedback,
+        .message-feedback:hover {
+            opacity: 1;
+        }
+        
+        .feedback-button {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+            transition: var(--transition-fast);
+        }
+        
+        .feedback-button:hover {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-md);
+            background-color: var(--card-bg);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            max-width: fit-content;
+            margin-top: var(--space-1);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition-normal);
+        }
+        
+        .typing-animation {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: var(--radius-full);
+            background-color: var(--text-secondary);
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typingAnimation {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-4px);
+            }
+        }
+        
+        /* Task Progress Cards */
+        .task-progress {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4) var(--space-5);
+            margin: var(--space-4) 0;
+            border-left: 3px solid var(--primary-color);
+            box-shadow: var(--shadow-sm);
+            animation: slideIn 0.3s ease-out;
+            transition: var(--transition-normal);
+        }
+        
+        .task-progress:hover {
+            box-shadow: var(--shadow-md);
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            margin-bottom: var(--space-3);
+        }
+        
+        .task-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: 0.9375rem;
+            font-weight: 600;
+        }
+        
+        .task-icon {
+            color: var(--primary-color);
+        }
+        
+        .task-status {
+            font-size: 0.75rem;
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-full);
+            color: white;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+        }
+        
+        .task-status.pending {
+            background-color: var(--warning-color);
+        }
+        
+        .task-status.in_progress {
+            background-color: var(--primary-color);
+        }
+        
+        .task-status.completed {
+            background-color: var(--success-color);
+        }
+        
+        .task-status.failed {
+            background-color: var(--error-color);
+        }
+        
+        .task-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-3);
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            margin-bottom: var(--space-1);
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(59, 130, 246, 0.1);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: var(--radius-full);
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            transition: width 0.5s ease;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        .task-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--space-2);
+            margin-top: var(--space-3);
+        }
+        
+        .task-action-button {
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--space-1) var(--space-2);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+        
+        .task-action-button:hover {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+        }
+        
+        /* Welcome Message */
+        .welcome-message {
+            text-align: center;
+            margin: var(--space-8) 0;
+            padding: var(--space-8);
+            border-radius: var(--radius-xl);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            transition: var(--transition-normal);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .welcome-icon {
+            font-size: 3.5rem;
+            color: var(--primary-color);
+            margin-bottom: var(--space-6);
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .welcome-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: var(--space-4);
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .welcome-text {
+            max-width: 600px;
+            margin: 0 auto;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-6);
+            font-size: 1.05rem;
+        }
+        
+        .welcome-suggestions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-4);
+            margin-top: var(--space-6);
+        }
+        
+        .welcome-suggestion {
+            padding: var(--space-4) var(--space-5);
+            border-radius: var(--radius-lg);
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: var(--transition-normal);
+            text-align: left;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .welcome-suggestion:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .welcome-suggestion:active {
+            transform: translateY(-1px);
+        }
+        
+        .suggestion-title {
+            font-weight: 600;
+            margin-bottom: var(--space-2);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+        
+        .suggestion-desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Composition Area */
+        .input-container {
+            padding: var(--space-5) var(--space-6);
+            border-top: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            position: relative;
+            transition: var(--transition-normal);
+        }
+        
+        .input-container.focused {
+            box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: var(--space-3);
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: var(--space-2) var(--space-3);
+            transition: var(--transition-fast);
+            position: relative;
+        }
+        
+        .input-wrapper.focused {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        
+        .input-field {
+            flex: 1;
+            border: none;
+            padding: var(--space-3);
+            font-size: 0.9375rem;
+            outline: none;
+            background-color: transparent;
+            color: var(--text-primary);
+            resize: none;
+            max-height: 200px;
+            min-height: 24px;
+            line-height: 1.5;
+            font-family: inherit;
+        }
+        
+        .input-field::placeholder {
+            color: var(--text-tertiary);
+        }
+        
+        .input-actions {
+            display: flex;
+            gap: var(--space-1);
+            padding: var(--space-2);
+        }
+        
+        .input-action-button {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: var(--space-1);
+            border-radius: var(--radius-full);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-fast);
+            width: 36px;
+            height: 36px;
+        }
+        
+        .input-action-button:hover {
+            background-color: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+        
+        .send-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-full);
+            padding: 0;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            margin-bottom: var(--space-2);
+            margin-right: var(--space-1);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .send-button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .send-button:active {
+            transform: translateY(0);
+        }
+        
+        .send-button:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .suggestions-bar {
+            display: flex;
+            gap: var(--space-2);
+            overflow-x: auto;
+            padding: var(--space-3) 0;
+            scroll-behavior: smooth;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .suggestions-bar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .suggestion-chip {
+            white-space: nowrap;
+            padding: var(--space-2) var(--space-3);
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+        
+        .suggestion-chip:hover {
+            background-color: var(--accent-light);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        /* Command Palette */
+        .command-palette {
+            position: absolute;
+            bottom: 100%;
+            left: var(--space-6);
+            right: var(--space-6);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: var(--z-dropdown);
+            display: none;
+            animation: slideUp 0.2s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .command-palette.active {
+            display: block;
+        }
+        
+        .command-header {
+            padding: var(--space-3) var(--space-4);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .command-list {
+            padding: var(--space-2);
+        }
+        
+        .command-item {
+            padding: var(--space-2) var(--space-3);
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            transition: var(--transition-fast);
+        }
+        
+        .command-item:hover {
+            background-color: var(--bg-secondary);
+        }
+        
+        .command-item.selected {
+            background-color: var(--bg-secondary);
+        }
+        
+        .command-icon {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .command-content {
+            flex: 1;
+        }
+        
+        .command-title {
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+        
+        .command-desc {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+        
+        .command-shortcut {
+            color: var(--text-tertiary);
+            font-size: 0.75rem;
+            background-color: var(--bg-color);
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
+            white-space: nowrap;
+        }
+        
+        /* File Upload Zone */
+        .file-upload-zone {
+            padding: var(--space-3);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            margin-top: var(--space-3);
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .file-upload-zone.active {
+            display: block;
+        }
+        
+        .file-upload-zone.drag-over {
+            border-color: var(--primary-color);
+            background-color: var(--accent-light);
+        }
+        
+        .upload-icon {
+            font-size: 1.5rem;
+            margin-bottom: var(--space-2);
+            color: var(--text-secondary);
+        }
+        
+        .file-browse {
+            color: var(--primary-color);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        
+        .file-browse:hover {
+            text-decoration: none;
+        }
+        
+        .uploaded-files {
+            margin-top: var(--space-3);
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-2);
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            max-width: 200px;
+        }
+        
+        .file-item-icon {
+            color: var(--primary-color);
+        }
+        
+        .file-item-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-item-remove {
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-size: 0.75rem;
+        }
+        
+        .file-item-remove:hover {
+            color: var(--error-color);
+        }
+        
+        /* Markdown Styling */
+        .agent .message-content p {
+            margin-bottom: var(--space-3);
+        }
+        
+        .agent .message-content p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .agent .message-content h1,
+        .agent .message-content h2,
+        .agent .message-content h3,
+        .agent .message-content h4 {
+            margin-top: var(--space-5);
+            margin-bottom: var(--space-3);
+            font-weight: 600;
+        }
+        
+        .agent .message-content h1 {
+            font-size: 1.5rem;
+            padding-bottom: var(--space-2);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .agent .message-content h2 {
+            font-size: 1.25rem;
+        }
+        
+        .agent .message-content h3 {
+            font-size: 1.125rem;
+        }
+        
+        .agent .message-content h4 {
+            font-size: 1rem;
+        }
+        
+        .agent .message-content ul,
+        .agent .message-content ol {
+            margin: var(--space-3) 0;
+            padding-left: var(--space-6);
+        }
+        
+        .agent .message-content ul {
+            list-style-type: disc;
+        }
+        
+        .agent .message-content ol {
+            list-style-type: decimal;
+        }
+        
+        .agent .message-content li {
+            margin-bottom: var(--space-2);
+        }
+        
+        .agent .message-content blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding: var(--space-3) var(--space-4);
+            margin: var(--space-3) 0;
+            background-color: var(--bg-secondary);
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm);
+        }
+        
+        .agent .message-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: var(--space-3) 0;
+            font-size: 0.9375rem;
+        }
+        
+        .agent .message-content th,
+        .agent .message-content td {
+            padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+        
+        .agent .message-content th {
+            background-color: var(--bg-secondary);
+            font-weight: 600;
+        }
+        
+        .agent .message-content tr:nth-child(even) {
+            background-color: var(--bg-secondary);
+        }
+        
+        .agent .message-content pre {
+            background-color: var(--bg-secondary);
+            padding: var(--space-4);
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+            margin: var(--space-3) 0;
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+        
+        .agent .message-content pre code {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+        }
+        
+        .agent .message-content code {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            background-color: var(--bg-secondary);
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: var(--space-2);
+            right: var(--space-2);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--space-1) var(--space-2);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+        }
+        
+        .copy-button:hover {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+        }
+        
+        .copy-button.copied {
+            background-color: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+        
+        .agent .message-content a {
+            color: var(--primary-color);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--primary-color);
+            transition: var(--transition-fast);
+        }
+        
+        .agent .message-content a:hover {
+            border-bottom: 1px solid var(--primary-color);
+        }
+        
+        .agent .message-content img {
+            max-width: 100%;
+            border-radius: var(--radius-md);
+            margin: var(--space-3) 0;
+        }
+        
+        .agent .message-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: var(--space-5) 0;
+        }
+        
+        /* Mermaid Diagram Support */
+        .mermaid {
+            margin: var(--space-4) 0;
+            padding: var(--space-4);
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            overflow: auto;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Message Skeleton (Loading) */
+        .message-skeleton {
+            animation: fadeIn 0.3s;
+        }
+        
+        .skeleton-content {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--space-2);
+            height: 16px;
+            background: linear-gradient(
+                to right, 
+                var(--bg-secondary) 8%, 
+                var(--border-color) 18%, 
+                var(--bg-secondary) 33%
+            );
+            background-size: 800px 100px;
+            animation: shimmer 2s infinite linear;
+        }
+        
+        @keyframes shimmer {
+            0% {
+                background-position: -468px 0;
+            }
+            100% {
+                background-position: 468px 0;
+            }
+        }
+        
+        .skeleton-line-1 {
+            width: 90%;
+        }
+        
+        .skeleton-line-2 {
+            width: 80%;
+        }
+        
+        .skeleton-line-3 {
+            width: 60%;
+        }
+        
+        /* Context Panel */
+        .context-panel {
+            position: fixed;
+            right: var(--space-6);
+            bottom: 100px;
+            width: 300px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            z-index: var(--z-fixed);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .context-panel.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .context-header {
+            padding: var(--space-3) var(--space-4);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9375rem;
+        }
+        
+        .context-close {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: var(--space-1);
+            border-radius: var(--radius-md);
+            transition: var(--transition-fast);
+        }
+        
+        .context-close:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+        }
+        
+        .context-content {
+            padding: var(--space-4);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .context-section {
+            margin-bottom: var(--space-4);
+        }
+        
+        .context-section-title {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: var(--space-2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .context-item {
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-md);
+            background-color: var(--bg-secondary);
+            margin-bottom: var(--space-2);
+            font-size: 0.875rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .context-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-1);
+        }
+        
+        .context-item-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .context-item-badge {
+            font-size: 0.75rem;
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-full);
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .context-item-details {
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+        }
+        
+        /* Error Message */
+        .error-message {
+            background-color: var(--error-light);
+            border-left: 3px solid var(--error-color);
+            padding: var(--space-3) var(--space-4);
+            margin: var(--space-3) 0;
+            border-radius: var(--radius-md);
+            color: var(--error-color);
+            font-size: 0.875rem;
+            animation: slideIn 0.3s ease-out;
+            position: relative;
+        }
+        
+        .error-title {
+            font-weight: 600;
+            margin-bottom: var(--space-1);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .error-close {
+            position: absolute;
+            top: var(--space-2);
+            right: var(--space-2);
+            background: none;
+            border: none;
+            color: var(--error-color);
+            cursor: pointer;
+            font-size: 0.875rem;
+            padding: var(--space-1);
+            border-radius: var(--radius-md);
+            transition: var(--transition-fast);
+        }
+        
+        .error-close:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 576px) {
+            :root {
+                --space-6: 1rem;
+            }
+            
+            .welcome-suggestions {
+                grid-template-columns: 1fr;
+            }
+            
+            .message-bubble {
+                max-width: calc(100% - 50px);
+            }
+            
+            .message-content {
+                padding: var(--space-3) var(--space-4);
+            }
+            
+            .input-container {
+                padding: var(--space-3) var(--space-4);
+            }
+            
+            .task-progress {
+                padding: var(--space-3) var(--space-4);
+            }
+            
+            .context-panel {
+                width: calc(100% - var(--space-6) * 2);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="app-logo">
+                    <i class="fas fa-cubes logo-icon"></i>
+                    <span>Kube Assistant</span>
+                </div>
+                <div class="sidebar-actions">
+                    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="mobile-close" id="mobile-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <button class="new-chat-button" id="new-chat-btn">
+                <i class="fas fa-plus"></i> New Conversation
+            </button>
+            
+            <div class="sidebar-heading">Recent Conversations</div>
+            <div class="conversation-list" id="conversation-list">
+                <!-- Conversation history will be populated here -->
+                <div class="conversation-item">
+                    <i class="fas fa-comment conversation-icon"></i>
+                    <div class="conversation-details">
+                        <div class="conversation-title">No conversations yet</div>
+                        <div class="conversation-preview">Start a new conversation</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <span>Kubernetes AI Agent v1.0</span>
+                <a href="#" target="_blank">Documentation</a>
+            </div>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="header-title">
+                    <i class="fas fa-robot header-icon"></i>
+                    Kubernetes AI Agent
+                </div>
+                <div class="header-actions">
+                    <div class="status-indicator">
+                        <span class="status-dot idle" id="status-dot"></span>
+                        <span id="status-text">Ready</span>
+                    </div>
+                    <button class="header-button" id="context-toggle" title="Show context">
+                        <i class="fas fa-cube"></i>
+                    </button>
+                    <button class="header-button" id="export-button" title="Export conversation">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="mobile-menu-button" id="mobile-menu-button">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="messages" id="messages">
+                <div class="welcome-message">
+                    <div class="welcome-icon">
+                        <i class="fas fa-cubes"></i>
+                    </div>
+                    <h2 class="welcome-title">Welcome to Kubernetes AI Agent</h2>
+                    <p class="welcome-text">
+                        I'm your Kubernetes assistant, ready to help manage and troubleshoot your clusters.
+                        Ask me anything about Kubernetes deployments, services, pods, or infrastructure!
+                    </p>
+                    
+                    <div class="welcome-suggestions">
+                        <div class="welcome-suggestion" onclick="suggestQuestion('How do I scale my deployment?')">
+                            <div class="suggestion-title">How do I scale my deployment?</div>
+                            <div class="suggestion-desc">Learn horizontal scaling options for your workloads</div>
+                        </div>
+                        <div class="welcome-suggestion" onclick="suggestQuestion('Debug why my pod is stuck in pending state')">
+                            <div class="suggestion-title">Debug why my pod is stuck in pending state</div>
+                            <div class="suggestion-desc">Common reasons and troubleshooting steps</div>
+                        </div>
+                        <div class="welcome-suggestion" onclick="suggestQuestion('How to set up monitoring for my cluster?')">
+                            <div class="suggestion-title">How to set up monitoring for my cluster?</div>
+                            <div class="suggestion-desc">Options for observability and monitoring</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container" id="input-container">
+                <div class="suggestions-bar" id="suggestions-bar">
+                    <!-- Dynamic suggestions will appear here -->
+                </div>
+                
+                <div class="file-upload-zone" id="file-upload-zone">
+                    <div class="upload-icon"><i class="fas fa-file-upload"></i></div>
+                    <p>Drag and drop YAML or log files here, or <span class="file-browse" id="file-browse">browse</span></p>
+                    <input type="file" id="file-input" style="display: none" multiple>
+                    <div class="uploaded-files" id="uploaded-files"></div>
+                </div>
+                
+                <div class="command-palette" id="command-palette">
+                    <div class="command-header">
+                        <i class="fas fa-terminal"></i> Command Palette
+                    </div>
+                    <div class="command-list">
+                        <!-- Commands will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="input-wrapper" id="input-wrapper">
+                    <textarea class="input-field" id="message-input" placeholder="Ask about Kubernetes..." rows="1"></textarea>
+                    <div class="input-actions">
+                        <button class="input-action-button" id="upload-button" title="Upload file">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <button class="input-action-button" id="command-button" title="Command palette (Ctrl+K)">
+                            <i class="fas fa-slash"></i>
+                        </button>
+                    </div>
+                    <button class="send-button" id="send-btn" title="Send message (Enter)">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="context-panel" id="context-panel">
+        <div class="context-header">
+            <span>Current Context</span>
+            <button class="context-close" id="context-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="context-content">
+            <div class="context-section">
+                <div class="context-section-title">Active Namespace</div>
+                <div class="context-item">
+                    <div class="context-item-header">
+                        <span class="context-item-title">default</span>
+                        <span class="context-item-badge">Active</span>
+                    </div>
+                    <div class="context-item-details">4 pods, 2 services</div>
+                </div>
+            </div>
+            <div class="context-section">
+                <div class="context-section-title">Recent Resources</div>
+                <div class="context-item">
+                    <div class="context-item-header">
+                        <span class="context-item-title">nginx-deployment</span>
+                        <span class="context-item-badge">Deployment</span>
+                    </div>
+                    <div class="context-item-details">3/3 replicas available</div>
+                </div>
+                <div class="context-item">
+                    <div class="context-item-header">
+                        <span class="context-item-title">redis-cache</span>
+                        <span class="context-item-badge">Pod</span>
+                    </div>
+                    <div class="context-item-details">Running</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.2.4/mermaid.min.js"></script>
+    
+    <script>
+        // State management
+        let currentConversationId = null;
+        let socket = null;
+        let conversations = [];
+        let isThinking = false;
+        let isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let uploadedFiles = [];
+        
+        // Dynamic suggestion options
+        const suggestionSets = {
+            general: [
+                "How do I scale my deployment?",
+                "Debug why my pod is stuck in pending state",
+                "How to set up monitoring for my cluster?"
+            ],
+            pods: [
+                "Why is my pod crashing?",
+                "How to debug pod networking issues",
+                "What's the difference between liveness and readiness probes?"
+            ],
+            deployments: [
+                "What's the best strategy for zero-downtime deployment?",
+                "How to rollback a failed deployment",
+                "Can you explain deployment strategies in Kubernetes?"
+            ]
+        };
+        
+        // Command palette options
+        const commands = [
+            {
+                title: "New Conversation",
+                description: "Start a fresh conversation",
+                icon: "fa-plus",
+                shortcut: "Ctrl+N",
+                action: () => startNewConversation()
+            },
+            {
+                title: "Upload YAML",
+                description: "Upload a Kubernetes manifest",
+                icon: "fa-file-code",
+                shortcut: "Ctrl+U", 
+                action: () => toggleFileUpload(true)
+            },
+            {
+                title: "Export Conversation",
+                description: "Save as markdown or PDF",
+                icon: "fa-download",
+                shortcut: "Ctrl+E",
+                action: () => exportConversation()
+            },
+            {
+                title: "Clear Conversation",
+                description: "Clear the current conversation",
+                icon: "fa-trash",
+                shortcut: "Ctrl+L",
+                action: () => clearConversation()
+            }
+        ];
+
+        // API endpoints
+        const API_BASE_URL = 'http://localhost:8000/api/';
+
+        // DOM elements
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-btn');
+        const messagesContainer = document.getElementById('messages');
+        const newChatButton = document.getElementById('new-chat-btn');
+        const conversationList = document.getElementById('conversation-list');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const themeToggle = document.getElementById('theme-toggle');
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileSidebarClose = document.getElementById('mobile-close');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const inputWrapper = document.getElementById('input-wrapper');
+        const inputContainer = document.getElementById('input-container');
+        const uploadButton = document.getElementById('upload-button');
+        const fileUploadZone = document.getElementById('file-upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileBrowse = document.getElementById('file-browse');
+        const uploadedFilesContainer = document.getElementById('uploaded-files');
+        const commandButton = document.getElementById('command-button');
+        const commandPalette = document.getElementById('command-palette');
+        const suggestionBar = document.getElementById('suggestions-bar');
+        const contextToggle = document.getElementById('context-toggle');
+        const contextPanel = document.getElementById('context-panel');
+        const contextClose = document.getElementById('context-close');
+        const exportButton = document.getElementById('export-button');
+
+        // Initialize marked.js
+        marked.setOptions({
+            renderer: new marked.Renderer(),
+            highlight: function(code, language) {
+                const validLanguage = hljs.getLanguage(language) ? language : 'plaintext';
+                return hljs.highlight(validLanguage, code).value;
+            },
+            langPrefix: 'hljs language-',
+            pedantic: false,
+            gfm: true,
+            breaks: false,
+            sanitize: false,
+            smartypants: false,
+            xhtml: false
+        });
+
+        // Initialize mermaid
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: isDarkMode ? 'dark' : 'default',
+            securityLevel: 'loose',
+            themeVariables: {
+                primaryColor: '#3b82f6',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#2563eb',
+                lineColor: '#64748b',
+                secondaryColor: '#9ca3af',
+                tertiaryColor: isDarkMode ? '#1f2937' : '#f3f4f6'
+            }
+        });
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            // Apply theme
+            updateTheme();
+            
+            // Auto-resize textarea
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight < 200) ? this.scrollHeight + 'px' : '200px';
+            });
+            
+            // Focus the input field
+            messageInput.focus();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Load conversation history
+            loadConversations();
+            
+            // Load dynamic suggestions
+            updateSuggestions('general');
+        });
+        
+        // Set up all event listeners
+        function setupEventListeners() {
+            // Message input events
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+                
+                // Command palette shortcut (Ctrl+K)
+                if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    toggleCommandPalette();
+                }
+            });
+            
+            messageInput.addEventListener('focus', function() {
+                inputWrapper.classList.add('focused');
+                inputContainer.classList.add('focused');
+            });
+            
+            messageInput.addEventListener('blur', function() {
+                inputWrapper.classList.remove('focused');
+                inputContainer.classList.remove('focused');
+            });
+            
+            // Button actions
+            sendButton.addEventListener('click', sendMessage);
+            newChatButton.addEventListener('click', startNewConversation);
+            themeToggle.addEventListener('click', toggleTheme);
+            exportButton.addEventListener('click', exportConversation);
+            uploadButton.addEventListener('click', () => toggleFileUpload());
+            commandButton.addEventListener('click', toggleCommandPalette);
+            
+            // Mobile menu
+            mobileMenuButton.addEventListener('click', () => toggleSidebar(true));
+            mobileSidebarClose.addEventListener('click', () => toggleSidebar(false));
+            sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
+            
+            // File upload
+            fileUploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUploadZone.classList.add('drag-over');
+            });
+            
+            fileUploadZone.addEventListener('dragleave', () => {
+                fileUploadZone.classList.remove('drag-over');
+            });
+            
+            fileUploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUploadZone.classList.remove('drag-over');
+                handleFileUpload(e.dataTransfer.files);
+            });
+            
+            fileBrowse.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', () => {
+                handleFileUpload(fileInput.files);
+            });
+            
+            // Context panel
+            contextToggle.addEventListener('click', toggleContextPanel);
+            contextClose.addEventListener('click', () => toggleContextPanel(false));
+            
+            // Global keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Escape to close modals
+                if (e.key === 'Escape') {
+                    if (commandPalette.classList.contains('active')) {
+                        toggleCommandPalette(false);
+                    }
+                    if (fileUploadZone.classList.contains('active')) {
+                        toggleFileUpload(false);
+                    }
+                    if (contextPanel.classList.contains('active')) {
+                        toggleContextPanel(false);
+                    }
+                    if (sidebar.classList.contains('active')) {
+                        toggleSidebar(false);
+                    }
+                }
+                
+                // Ctrl+/ for command palette
+                if (e.key === '/' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    toggleCommandPalette();
+                }
+            });
+        }
+        
+        // Toggle dark/light theme
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            updateTheme();
+        }
+        
+        function updateTheme() {
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                document.documentElement.classList.remove('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            }
+            
+            // Update mermaid theme
+            mermaid.initialize({
+                theme: isDarkMode ? 'dark' : 'default',
+                themeVariables: {
+                    primaryColor: '#3b82f6',
+                    primaryTextColor: '#fff',
+                    primaryBorderColor: '#2563eb',
+                    lineColor: '#64748b',
+                    secondaryColor: '#9ca3af',
+                    tertiaryColor: isDarkMode ? '#1f2937' : '#f3f4f6'
+                }
+            });
+        }
+        
+        // Toggle sidebar on mobile
+        function toggleSidebar(show) {
+            if (show) {
+                sidebar.classList.add('active');
+                sidebarOverlay.classList.add('active');
+            } else {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+            }
+        }
+        
+        // Toggle file upload zone
+        function toggleFileUpload(show) {
+            if (show === undefined) {
+                show = !fileUploadZone.classList.contains('active');
+            }
+            
+            if (show) {
+                fileUploadZone.classList.add('active');
+                // Close command palette if open
+                commandPalette.classList.remove('active');
+            } else {
+                fileUploadZone.classList.remove('active');
+            }
+        }
+        
+        // Handle file uploads
+        function handleFileUpload(files) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                // Check if file is valid (e.g., YAML, JSON, log)
+                const validExtensions = ['.yaml', '.yml', '.json', '.log', '.txt'];
+                const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+                
+                if (!validExtensions.includes(fileExt)) {
+                    showError(`File ${file.name} is not supported. Please upload YAML, JSON, or log files.`);
+                    continue;
+                }
+                
+                // Add to uploaded files
+                uploadedFiles.push(file);
+                
+                // Add file item to UI
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                let fileIcon = 'fa-file-alt';
+                if (fileExt === '.yaml' || fileExt === '.yml') fileIcon = 'fa-file-code';
+                if (fileExt === '.json') fileIcon = 'fa-file-code';
+                if (fileExt === '.log') fileIcon = 'fa-file-alt';
+                
+                fileItem.innerHTML = `
+                    <i class="fas ${fileIcon} file-item-icon"></i>
+                    <span class="file-item-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
+                    <i class="fas fa-times file-item-remove" data-file="${escapeHtml(file.name)}"></i>
+                `;
+                
+                uploadedFilesContainer.appendChild(fileItem);
+                
+                // Add event listener for remove button
+                fileItem.querySelector('.file-item-remove').addEventListener('click', function() {
+                    const fileName = this.getAttribute('data-file');
+                    removeFile(fileName);
+                });
+            }
+        }
+        
+        // Remove file from uploaded files
+        function removeFile(fileName) {
+            uploadedFiles = uploadedFiles.filter(file => file.name !== fileName);
+            
+            // Remove from UI
+            const fileItems = uploadedFilesContainer.querySelectorAll('.file-item');
+            fileItems.forEach(item => {
+                if (item.querySelector('.file-item-name').getAttribute('title') === fileName) {
+                    item.remove();
+                }
+            });
+            
+            // Hide upload zone if no files
+            if (uploadedFiles.length === 0) {
+                toggleFileUpload(false);
+            }
+        }
+        
+        // Toggle command palette
+        function toggleCommandPalette(show) {
+            if (show === undefined) {
+                show = !commandPalette.classList.contains('active');
+            }
+            
+            if (show) {
+                commandPalette.classList.add('active');
+                populateCommandPalette();
+                
+                // Close file upload if open
+                fileUploadZone.classList.remove('active');
+            } else {
+                commandPalette.classList.remove('active');
+            }
+        }
+        
+        // Populate command palette with commands
+        function populateCommandPalette() {
+            const commandList = commandPalette.querySelector('.command-list');
+            commandList.innerHTML = '';
+            
+            commands.forEach((cmd, idx) => {
+                const item = document.createElement('div');
+                item.className = 'command-item';
+                if (idx === 0) item.classList.add('selected');
+                
+                item.innerHTML = `
+                    <div class="command-icon"><i class="fas ${cmd.icon}"></i></div>
+                    <div class="command-content">
+                        <div class="command-title">${cmd.title}</div>
+                        <div class="command-desc">${cmd.description}</div>
+                    </div>
+                    <div class="command-shortcut">${cmd.shortcut}</div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    cmd.action();
+                    toggleCommandPalette(false);
+                });
+                
+                commandList.appendChild(item);
+            });
+        }
+        
+        // Toggle context panel
+        function toggleContextPanel(show) {
+            if (show === undefined) {
+                show = !contextPanel.classList.contains('active');
+            }
+            
+            if (show) {
+                contextPanel.classList.add('active');
+            } else {
+                contextPanel.classList.remove('active');
+            }
+        }
+        
+        // Update suggestions bar
+        function updateSuggestions(category) {
+            const suggestions = suggestionSets[category] || suggestionSets.general;
+            suggestionBar.innerHTML = '';
+            
+            suggestions.forEach(suggestion => {
+                const chip = document.createElement('div');
+                chip.className = 'suggestion-chip';
+                chip.textContent = suggestion;
+                chip.addEventListener('click', () => suggestQuestion(suggestion));
+                suggestionBar.appendChild(chip);
+            });
+        }
+
+        // Suggested questions
+        function suggestQuestion(question) {
+            messageInput.value = question;
+            messageInput.focus();
+            
+            // Trigger input event to resize textarea
+            messageInput.dispatchEvent(new Event('input'));
+        }
+
+        // Load conversation history from API
+        async function loadConversations() {
+            try {
+                updateStatus('connecting', 'Loading conversations...');
+                
+                const response = await fetch(`${API_BASE_URL}conversations`);
+                if (response.ok) {
+                    const data = await response.json();
+                    conversations = data.conversations || [];
+
+                    // Clear the list
+                    conversationList.innerHTML = '';
+
+                    if (conversations.length === 0) {
+                        conversationList.innerHTML = `
+                            <div class="conversation-item">
+                                <i class="fas fa-comment conversation-icon"></i>
+                                <div class="conversation-details">
+                                    <div class="conversation-title">No conversations yet</div>
+                                    <div class="conversation-preview">Start a new conversation</div>
+                                </div>
+                            </div>
+                        `;
+                        updateStatus('idle', 'Ready');
+                        return;
+                    }
+
+                    // Populate conversation list
+                    conversations.forEach(conv => {
+                        const item = document.createElement('div');
+                        item.className = 'conversation-item';
+                        item.dataset.id = conv.id;
+                        
+                        // Get preview from first few words of goal
+                        const preview = truncateText(conv.goal, 40);
+                        
+                        item.innerHTML = `
+                            <i class="fas fa-comment conversation-icon"></i>
+                            <div class="conversation-details">
+                                <div class="conversation-title">${escapeHtml(truncateText(conv.goal, 24))}</div>
+                                <div class="conversation-preview">${escapeHtml(preview)}</div>
+                            </div>
+                        `;
+
+                        item.addEventListener('click', () => loadConversation(conv.id));
+
+                        conversationList.appendChild(item);
+                    });
+                    
+                    updateStatus('idle', 'Ready');
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                updateStatus('error', 'Connection error');
+                showError('Error loading conversations. Please try again.');
+            }
+        }
+
+        // Load a specific conversation
+        async function loadConversation(conversationId) {
+            if (socket) {
+                // Close existing WebSocket connection
+                socket.close();
+            }
+
+            try {
+                updateStatus('connecting', 'Loading conversation...');
+                
+                // Mark the selected conversation
+                const items = document.querySelectorAll('.conversation-item');
+                items.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.id === conversationId) {
+                        item.classList.add('active');
+                    }
+                });
+
+                // Load conversation details
+                const response = await fetch(`${API_BASE_URL}conversations/${conversationId}`);
+                if (response.ok) {
+                    const conversation = await response.json();
+                    currentConversationId = conversationId;
+
+                    // Remove welcome message if present
+                    const welcomeMessage = document.querySelector('.welcome-message');
+                    if (welcomeMessage) {
+                        welcomeMessage.remove();
+                    }
+
+                    // Clear messages
+                    messagesContainer.innerHTML = '';
+
+                    // Add conversation header message
+                    addSystemMessage(`Loaded conversation: **${conversation.goal}**`);
+
+                    // Load conversation messages
+                    const messagesResponse = await fetch(`${API_BASE_URL}conversations/${conversationId}/messages`);
+                    if (messagesResponse.ok) {
+                        const messagesData = await messagesResponse.json();
+
+                        messagesData.forEach(msg => {
+                            addMessage(msg.sender, msg.content, new Date(msg.created_at));
+                        });
+
+                        // Scroll to bottom
+                        scrollToBottom();
+                    }
+
+                    // Connect to WebSocket for this conversation
+                    connectWebSocket(conversationId);
+                    
+                    // Close mobile sidebar if open
+                    toggleSidebar(false);
+                    
+                    // Update suggestions based on conversation
+                    updateSuggestions('general');
+                }
+            } catch (error) {
+                console.error('Error loading conversation:', error);
+                updateStatus('error', 'Error loading conversation');
+                showError('Error loading conversation. Please try again.');
+            }
+        }
+
+        // Start a new conversation
+        async function startNewConversation() {
+            // Prompt for goal with a nicer UI in the future
+            const goal = prompt('What do you want to accomplish with Kubernetes?');
+            if (!goal) return;
+
+            try {
+                updateStatus('connecting', 'Starting new conversation...');
+
+                const response = await fetch(`${API_BASE_URL}conversations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        goal: goal,
+                        goal_category: 'kubernetes'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentConversationId = data.id;
+
+                    // Remove welcome message if present
+                    const welcomeMessage = document.querySelector('.welcome-message');
+                    if (welcomeMessage) {
+                        welcomeMessage.remove();
+                    }
+                    
+                    // Clear messages
+                    messagesContainer.innerHTML = '';
+
+                    // Add user message
+                    addMessage('user', goal);
+                    
+                    // Show agent thinking
+                    showAgentThinking();
+
+                    // Connect to WebSocket
+                    connectWebSocket(currentConversationId);
+
+                    // Refresh conversation list
+                    loadConversations();
+
+                    // Update status
+                    updateStatus('typing', 'Processing your request...');
+                    
+                    // Close mobile sidebar if open
+                    toggleSidebar(false);
+                    
+                    // Update suggestions based on the goal
+                    if (goal.toLowerCase().includes('pod')) {
+                        updateSuggestions('pods');
+                    } else if (goal.toLowerCase().includes('deployment')) {
+                        updateSuggestions('deployments');
+                    } else {
+                        updateSuggestions('general');
+                    }
+                }
+            } catch (error) {
+                console.error('Error starting conversation:', error);
+                updateStatus('error', 'Error starting conversation');
+                showError('Failed to start conversation. Please try again.');
+            }
+        }
+
+        // Show that the agent is thinking
+        function showAgentThinking() {
+            if (isThinking) return;
+            isThinking = true;
+            
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message agent';
+            typingIndicator.id = 'typing-indicator';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerHTML = '<i class="fas fa-robot"></i>';
+            
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator';
+            indicator.innerHTML = `
+                <span>Kubernetes AI is thinking</span>
+                <div class="typing-animation">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            
+            typingIndicator.appendChild(avatar);
+            typingIndicator.appendChild(indicator);
+            
+            messagesContainer.appendChild(typingIndicator);
+            scrollToBottom();
+        }
+        
+        // Hide thinking indicator
+        function hideAgentThinking() {
+            isThinking = false;
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Send a message
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Clear input and reset height
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            // Disable send button while processing
+            sendButton.disabled = true;
+
+            // If no conversation is active, start a new one
+            if (!currentConversationId) {
+                const goal = message;
+                try {
+                    updateStatus('connecting', 'Starting new conversation...');
+
+                    // Remove welcome message if present
+                    const welcomeMessage = document.querySelector('.welcome-message');
+                    if (welcomeMessage) {
+                        welcomeMessage.remove();
+                    }
+
+                    // Add user message
+                    addMessage('user', goal);
+                    
+                    // Show agent thinking
+                    showAgentThinking();
+
+                    const response = await fetch(`${API_BASE_URL}conversations`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            goal: goal,
+                            goal_category: 'kubernetes'
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        currentConversationId = data.id;
+
+                        // Connect to WebSocket
+                        connectWebSocket(currentConversationId);
+
+                        // Refresh conversation list
+                        loadConversations();
+
+                        // Update status
+                        updateStatus('typing', 'Processing your request...');
+                    }
+                } catch (error) {
+                    console.error('Error starting conversation:', error);
+                    updateStatus('error', 'Error starting conversation');
+                    showError('Failed to start conversation. Please try again.');
+                    sendButton.disabled = false;
+                }
+                return;
+            }
+
+            // Add message to UI
+            addMessage('user', message);
+            
+            // Show agent thinking
+            showAgentThinking();
+
+            try {
+                updateStatus('typing', 'Processing your request...');
+
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    connectWebSocket(currentConversationId, () => {
+                        sendMessageToApi(message);
+                    });
+                } else {
+                    sendMessageToApi(message);
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                updateStatus('error', 'Error sending message');
+                showError('Failed to send message. Please try again.');
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        function sendMessageToApi(message) {
+            fetch(`${API_BASE_URL}conversations/${currentConversationId}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content: message
+                })
+            }).catch(error => {
+                console.error('Error sending message:', error);
+                updateStatus('error', 'Error sending message');
+                showError('Failed to send message. Please try again.');
+                
+                // Remove thinking indicator
+                hideAgentThinking();
+                
+                sendButton.disabled = false;
+            });
+        }
+
+        // Connect to WebSocket for real-time updates
+        function connectWebSocket(conversationId, onOpenCallback) {
+            if (socket) {
+                socket.close();
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/${conversationId}`;
+
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = function() {
+                if (onOpenCallback) onOpenCallback();
+                console.log('WebSocket connected');
+                updateStatus('idle', 'Connected');
+            };
+
+            socket.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                handleWebSocketMessage(message);
+            };
+
+            socket.onclose = function() {
+                console.log('WebSocket disconnected');
+                updateStatus('idle', 'Ready');
+            };
+
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                updateStatus('error', 'Connection error');
+                showError('Connection error. Please try refreshing the page.');
+            };
+        }
+
+        // Handle WebSocket messages
+        function handleWebSocketMessage(message) {
+            const type = message.type;
+            const content = message.content;
+
+            switch (type) {
+                case 'connection_established':
+                    updateStatus('idle', 'Connected');
+                    break;
+
+                case 'agent_thinking':
+                    if (content.is_thinking) {
+                        updateStatus('typing', 'Agent is thinking...');
+                        showAgentThinking();
+                    } else {
+                        updateStatus('idle', 'Ready');
+                        hideAgentThinking();
+                    }
+                    break;
+
+                case 'task_status':
+                    handleTaskStatus(content);
+                    break;
+
+                case 'plan_update':
+                    handlePlanUpdate(content);
+                    break;
+
+                case 'error':
+                    updateStatus('error', 'Error');
+                    hideAgentThinking();
+                    showError(content.error);
+                    break;
+            }
+        }
+
+        // Handle task status updates
+        function handleTaskStatus(content) {
+            const taskId = content.task_id;
+            const status = content.status;
+            const details = content.details || {};
+
+            // Find or create task progress element
+            let taskElement = document.getElementById(`task-${taskId}`);
+
+            if (!taskElement) {
+                taskElement = document.createElement('div');
+                taskElement.className = 'task-progress';
+                taskElement.id = `task-${taskId}`;
+
+                // Insert before typing indicator if present, or at the end
+                const typingIndicator = document.getElementById('typing-indicator');
+                if (typingIndicator) {
+                    messagesContainer.insertBefore(taskElement, typingIndicator);
+                } else {
+                    messagesContainer.appendChild(taskElement);
+                }
+                
+                scrollToBottom();
+            }
+
+            // Update task status and progress
+            let progress = 0;
+            let taskIcon = 'fa-spinner fa-pulse';
+            let taskDescription = details.description || `Task ${taskId.substring(0, 8)}`;
+            let estimatedTime = '';
+            
+            switch (status) {
+                case 'pending':
+                    progress = 0;
+                    taskIcon = 'fa-clock';
+                    break;
+                case 'in_progress':
+                    progress = details.progress_percentage || 50;
+                    taskIcon = 'fa-spinner fa-pulse';
+                    
+                    // Add estimated time if available
+                    if (details.estimated_seconds) {
+                        const seconds = details.estimated_seconds;
+                        if (seconds < 60) {
+                            estimatedTime = `${seconds}s remaining`;
+                        } else {
+                            estimatedTime = `${Math.round(seconds / 60)}m remaining`;
+                        }
+                    }
+                    break;
+                case 'completed':
+                    progress = 100;
+                    taskIcon = 'fa-check-circle';
+
+                    // If task completed with a response, add a new agent message
+                    if (details.response && details.response.result) {
+                        // Hide agent thinking indicator
+                        hideAgentThinking();
+                        
+                        // Add message with the response
+                        addMessage('agent', details.response.result);
+                    }
+                    break;
+                case 'failed':
+                    progress = 100;
+                    taskIcon = 'fa-exclamation-circle';
+                    break;
+            }
+
+            // Update task element with more details
+            taskElement.innerHTML = `
+                <div class="task-header">
+                    <div class="task-title">
+                        <i class="fas ${taskIcon} task-icon"></i>
+                        ${escapeHtml(taskDescription)}
+                    </div>
+                    <span class="task-status ${status}">
+                        <i class="fas ${status === 'pending' ? 'fa-clock' : 
+                                       status === 'in_progress' ? 'fa-spinner fa-pulse' : 
+                                       status === 'completed' ? 'fa-check' : 'fa-times'}"></i>
+                        ${status.replace('_', ' ')}
+                    </span>
+                </div>
+                ${taskDescription ? `<div class="task-description">${escapeHtml(taskDescription)}</div>` : ''}
+                <div class="progress-info">
+                    <span>${Math.round(progress)}% complete</span>
+                    <span>${estimatedTime}</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${progress}%"></div>
+                </div>
+                ${status === 'failed' && details.error ? `
+                    <div class="error-message" style="margin-top: 10px;">
+                        <div class="error-title"><i class="fas fa-exclamation-triangle"></i> Error</div>
+                        ${escapeHtml(details.error)}
+                    </div>
+                ` : ''}
+            `;
+
+            // Scroll to show the updated task
+            taskElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Handle plan updates
+        function handlePlanUpdate(content) {
+            console.log('Plan update:', content);
+            
+            // Show plan overview in a system message
+            if (content.tasks && content.tasks.length > 0) {
+                const taskCount = content.tasks.length;
+                const planId = content.plan_id;
+                
+                let planMessage = `**Plan created**: ${taskCount} tasks identified to complete your goal.`;
+                
+                // Add plan to context panel
+                updateContextPanel(content);
+                
+                // Add as system message
+                addSystemMessage(planMessage);
+            }
+        }
+        
+        // Update context panel with plan info
+        function updateContextPanel(planData) {
+            if (!planData || !planData.tasks) return;
+            
+            const contextContent = contextPanel.querySelector('.context-content');
+            const taskSection = document.createElement('div');
+            taskSection.className = 'context-section';
+            taskSection.innerHTML = `
+                <div class="context-section-title">Plan Tasks</div>
+            `;
+            
+            // Add task items
+            planData.tasks.forEach((task, idx) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'context-item';
+                taskItem.innerHTML = `
+                    <div class="context-item-header">
+                        <span class="context-item-title">${escapeHtml(truncateText(task.description, 30))}</span>
+                        <span class="context-item-badge">Task ${idx + 1}</span>
+                    </div>
+                    <div class="context-item-details">${task.status || 'Pending'}</div>
+                `;
+                taskSection.appendChild(taskItem);
+            });
+            
+            // Clear existing plan section if any
+            const existingPlanSection = contextContent.querySelector('.context-section:nth-child(3)');
+            if (existingPlanSection) {
+                contextContent.removeChild(existingPlanSection);
+            }
+            
+            // Add to context panel
+            contextContent.appendChild(taskSection);
+        }
+
+        // Add a message to the chat
+        function addMessage(sender, content, timestamp = new Date()) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${sender}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            
+            if (sender === 'user') {
+                avatar.innerHTML = '<i class="fas fa-user"></i>';
+            } else {
+                avatar.innerHTML = '<i class="fas fa-robot"></i>';
+            }
+            
+            const messageBubble = document.createElement('div');
+            messageBubble.className = 'message-bubble';
+
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+
+            const formattedTime = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const formattedDate = isToday(timestamp) ? 'Today' : 
+                                  isYesterday(timestamp) ? 'Yesterday' : 
+                                  timestamp.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+            // Render content appropriately based on sender
+            if (sender === 'agent') {
+                // Render markdown for agent messages
+                messageContent.innerHTML = marked.parse(content);
+                
+                // Add copy buttons to code blocks
+                addCopyButtonsToCodeBlocks(messageContent);
+                
+                // Render any mermaid diagrams
+                renderMermaidDiagrams(messageContent);
+                
+                // Add message actions
+                const messageActions = document.createElement('div');
+                messageActions.className = 'message-actions';
+                messageActions.innerHTML = `
+                    <button class="message-action-button" title="Copy message">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button class="message-action-button" title="Save as file">
+                        <i class="fas fa-download"></i>
+                    </button>
+                `;
+                
+                // Add feedback buttons below the message
+                const messageFeedback = document.createElement('div');
+                messageFeedback.className = 'message-feedback';
+                messageFeedback.innerHTML = `
+                    <button class="feedback-button" title="Helpful">
+                        <i class="fas fa-thumbs-up"></i> Helpful
+                    </button>
+                    <button class="feedback-button" title="Not helpful">
+                        <i class="fas fa-thumbs-down"></i> Not helpful
+                    </button>
+                `;
+                
+                // Add event listeners for actions
+                messageActions.querySelector('.message-action-button[title="Copy message"]').addEventListener('click', () => {
+                    copyToClipboard(content);
+                    showToast('Message copied to clipboard');
+                });
+                
+                messageActions.querySelector('.message-action-button[title="Save as file"]').addEventListener('click', () => {
+                    downloadAsFile(content, 'kubernetes-agent-response.md');
+                });
+                
+                // Add event listeners for feedback
+                messageFeedback.querySelector('.feedback-button[title="Helpful"]').addEventListener('click', function() {
+                    this.classList.add('active');
+                    messageFeedback.querySelector('.feedback-button[title="Not helpful"]').classList.remove('active');
+                    // Send feedback to backend (not implemented)
+                    showToast('Thanks for your feedback!');
+                });
+                
+                messageFeedback.querySelector('.feedback-button[title="Not helpful"]').addEventListener('click', function() {
+                    this.classList.add('active');
+                    messageFeedback.querySelector('.feedback-button[title="Helpful"]').classList.remove('active');
+                    // Send feedback to backend (not implemented)
+                    showToast('Thanks for your feedback! We\'ll work to improve.');
+                });
+                
+                messageBubble.appendChild(messageActions);
+                messageBubble.appendChild(messageContent);
+                messageBubble.appendChild(messageFeedback);
+            } else {
+                // For user messages, display plain text
+                messageContent.innerHTML = `<div>${escapeHtml(content)}</div>`;
+                messageBubble.appendChild(messageContent);
+            }
+            
+            // Add timestamp
+            const messageTime = document.createElement('div');
+            messageTime.className = 'message-time';
+            messageTime.innerHTML = `
+                <span>${formattedDate}</span> • <span>${formattedTime}</span>
+            `;
+            messageBubble.appendChild(messageTime);
+            
+            // Assemble message
+            messageElement.appendChild(avatar);
+            messageElement.appendChild(messageBubble);
+
+            messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+            
+            // Update suggestions based on the latest message
+            if (sender === 'agent') {
+                // Analyze message to determine relevant suggestions
+                if (content.toLowerCase().includes('pod')) {
+                    updateSuggestions('pods');
+                } else if (content.toLowerCase().includes('deployment')) {
+                    updateSuggestions('deployments');
+                }
+            }
+        }
+        
+        // Add system message (special styling)
+        function addSystemMessage(content) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message agent';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerHTML = '<i class="fas fa-robot"></i>';
+            
+            const messageBubble = document.createElement('div');
+            messageBubble.className = 'message-bubble';
+
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+            messageContent.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+            
+            // Render markdown
+            messageContent.innerHTML = marked.parse(content);
+            
+            const timestamp = new Date();
+            const formattedTime = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // Add timestamp
+            const messageTime = document.createElement('div');
+            messageTime.className = 'message-time';
+            messageTime.innerHTML = `<span>System</span> • <span>${formattedTime}</span>`;
+            
+            messageBubble.appendChild(messageContent);
+            messageBubble.appendChild(messageTime);
+            
+            // Assemble message
+            messageElement.appendChild(avatar);
+            messageElement.appendChild(messageBubble);
+
+            messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+        }
+        
+        // Add copy buttons to code blocks
+        function addCopyButtonsToCodeBlocks(container) {
+            const codeBlocks = container.querySelectorAll('pre');
+            
+            codeBlocks.forEach(block => {
+                // Only add button if not already present
+                if (!block.querySelector('.copy-button')) {
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'copy-button';
+                    copyButton.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                    
+                    copyButton.addEventListener('click', function() {
+                        const code = block.querySelector('code').innerText;
+                        copyToClipboard(code);
+                        
+                        // Show copied state
+                        this.classList.add('copied');
+                        this.innerHTML = '<i class="fas fa-check"></i> Copied';
+                        
+                        // Reset after 2 seconds
+                        setTimeout(() => {
+                            this.classList.remove('copied');
+                            this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                        }, 2000);
+                    });
+                    
+                    block.appendChild(copyButton);
+                }
+            });
+        }
+        
+        // Render mermaid diagrams
+        function renderMermaidDiagrams(container) {
+            const mermaidBlocks = container.querySelectorAll('pre code.language-mermaid');
+            
+            if (mermaidBlocks.length === 0) return;
+            
+            mermaidBlocks.forEach((block, index) => {
+                const mermaidCode = block.textContent;
+                const mermaidContainer = document.createElement('div');
+                mermaidContainer.className = 'mermaid';
+                mermaidContainer.id = `mermaid-diagram-${Date.now()}-${index}`;
+                
+                // Replace pre>code with the diagram container
+                const preElement = block.parentElement;
+                preElement.parentElement.replaceChild(mermaidContainer, preElement);
+                
+                try {
+                    // Wait for next tick to ensure DOM is updated
+                    setTimeout(() => {
+                        mermaid.render(mermaidContainer.id, mermaidCode).then(result => {
+                            mermaidContainer.innerHTML = result.svg;
+                        }).catch(error => {
+                            console.error('Mermaid render error:', error);
+                            mermaidContainer.innerHTML = `
+                                <div class="error-message">
+                                    <div class="error-title"><i class="fas fa-exclamation-triangle"></i> Diagram Error</div>
+                                    Could not render diagram. Please check the syntax.
+                                </div>
+                                <pre><code>${escapeHtml(mermaidCode)}</code></pre>
+                            `;
+                        });
+                    }, 0);
+                } catch (error) {
+                    console.error('Mermaid error:', error);
+                    mermaidContainer.innerHTML = `
+                        <div class="error-message">
+                            <div class="error-title"><i class="fas fa-exclamation-triangle"></i> Diagram Error</div>
+                            Could not render diagram. Please check the syntax.
+                        </div>
+                        <pre><code>${escapeHtml(mermaidCode)}</code></pre>
+                    `;
+                }
+            });
+        }
+
+        // Show error message
+        function showError(error) {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.innerHTML = `
+                <div class="error-title"><i class="fas fa-exclamation-triangle"></i> Error</div>
+                ${escapeHtml(error)}
+                <button class="error-close"><i class="fas fa-times"></i></button>
+            `;
+            
+            // Add event listener for close button
+            errorElement.querySelector('.error-close').addEventListener('click', function() {
+                errorElement.remove();
+            });
+            
+            messagesContainer.appendChild(errorElement);
+            scrollToBottom();
+            
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (errorElement.parentNode) {
+                    errorElement.style.opacity = '0';
+                    errorElement.style.height = '0';
+                    errorElement.style.margin = '0';
+                    errorElement.style.padding = '0';
+                    errorElement.style.transition = 'all 0.5s ease';
+                    
+                    setTimeout(() => {
+                        if (errorElement.parentNode) {
+                            errorElement.parentNode.removeChild(errorElement);
+                        }
+                    }, 500);
+                }
+            }, 10000);
+        }
+        
+        // Show toast notification
+        function showToast(message, duration = 3000) {
+            // Remove existing toast if any
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <i class="fas fa-info-circle"></i>
+                    <span>${escapeHtml(message)}</span>
+                </div>
+            `;
+            
+            // Add styles if not already in CSS
+            if (!document.getElementById('toast-styles')) {
+                const toastStyles = document.createElement('style');
+                toastStyles.id = 'toast-styles';
+                toastStyles.textContent = `
+                    .toast-notification {
+                        position: fixed;
+                        bottom: 20px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background-color: var(--card-bg);
+                        color: var(--text-primary);
+                        padding: 10px 20px;
+                        border-radius: var(--radius-lg);
+                        box-shadow: var(--shadow-lg);
+                        z-index: 9999;
+                        animation: toastIn 0.3s ease, toastOut 0.3s ease forwards;
+                        animation-delay: 0s, ${duration - 300}ms;
+                    }
+                    
+                    .toast-content {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+                    
+                    @keyframes toastIn {
+                        from { opacity: 0; transform: translate(-50%, 20px); }
+                        to { opacity: 1; transform: translate(-50%, 0); }
+                    }
+                    
+                    @keyframes toastOut {
+                        from { opacity: 1; transform: translate(-50%, 0); }
+                        to { opacity: 0; transform: translate(-50%, 20px); }
+                    }
+                `;
+                document.head.appendChild(toastStyles);
+            }
+            
+            document.body.appendChild(toast);
+            
+            // Remove after duration
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, duration);
+        }
+
+        // Clear conversation
+        function clearConversation() {
+            if (!confirm('Are you sure you want to clear the current conversation?')) return;
+            
+            // Keep the current conversation ID
+            const currentId = currentConversationId;
+            
+            // Remove all messages
+            messagesContainer.innerHTML = '';
+            
+            // Add system message
+            addSystemMessage('Conversation cleared. You can continue with a new question.');
+            
+            // Update suggestions
+            updateSuggestions('general');
+        }
+        
+        // Export conversation
+        function exportConversation() {
+            if (!currentConversationId) {
+                showToast('No active conversation to export');
+                return;
+            }
+            
+            // Create export options dialog
+            const dialog = document.createElement('div');
+            dialog.className = 'export-dialog';
+            dialog.innerHTML = `
+                <div class="export-dialog-content">
+                    <div class="export-dialog-header">
+                        <h3>Export Conversation</h3>
+                        <button class="export-dialog-close"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="export-dialog-body">
+                        <div class="export-option" data-format="markdown">
+                            <i class="fas fa-file-alt"></i>
+                            <div class="export-option-details">
+                                <div class="export-option-title">Markdown (.md)</div>
+                                <div class="export-option-desc">Best for further editing or sharing</div>
+                            </div>
+                        </div>
+                        <div class="export-option" data-format="json">
+                            <i class="fas fa-file-code"></i>
+                            <div class="export-option-details">
+                                <div class="export-option-title">JSON (.json)</div>
+                                <div class="export-option-desc">Complete data for programmatic use</div>
+                            </div>
+                        </div>
+                        <div class="export-option" data-format="text">
+                            <i class="fas fa-file-text"></i>
+                            <div class="export-option-details">
+                                <div class="export-option-title">Plain Text (.txt)</div>
+                                <div class="export-option-desc">Simple text format</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add styles if not already in CSS
+            if (!document.getElementById('export-dialog-styles')) {
+                const dialogStyles = document.createElement('style');
+                dialogStyles.id = 'export-dialog-styles';
+                dialogStyles.textContent = `
+                    .export-dialog {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: rgba(0, 0, 0, 0.5);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 9999;
+                        animation: fadeIn 0.3s ease;
+                    }
+                    
+                    .export-dialog-content {
+                        background-color: var(--card-bg);
+                        border-radius: var(--radius-lg);
+                        width: 400px;
+                        max-width: 90%;
+                        box-shadow: var(--shadow-lg);
+                    }
+                    
+                    .export-dialog-header {
+                        padding: 15px 20px;
+                        border-bottom: 1px solid var(--border-color);
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                    }
+                    
+                    .export-dialog-header h3 {
+                        margin: 0;
+                        font-size: 1.2rem;
+                    }
+                    
+                    .export-dialog-close {
+                        background: none;
+                        border: none;
+                        color: var(--text-secondary);
+                        cursor: pointer;
+                        font-size: 1rem;
+                    }
+                    
+                    .export-dialog-body {
+                        padding: 20px;
+                    }
+                    
+                    .export-option {
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                        padding: 15px;
+                        border-radius: var(--radius-md);
+                        cursor: pointer;
+                        transition: var(--transition-fast);
+                    }
+                    
+                    .export-option:hover {
+                        background-color: var(--bg-secondary);
+                    }
+                    
+                    .export-option i {
+                        font-size: 1.5rem;
+                        color: var(--primary-color);
+                    }
+                    
+                    .export-option-details {
+                        flex: 1;
+                    }
+                    
+                    .export-option-title {
+                        font-weight: 600;
+                    }
+                    
+                    .export-option-desc {
+                        font-size: 0.875rem;
+                        color: var(--text-secondary);
+                    }
+                `;
+                document.head.appendChild(dialogStyles);
+            }
+            
+            // Add event listeners
+            dialog.querySelector('.export-dialog-close').addEventListener('click', () => {
+                dialog.remove();
+            });
+            
+            const exportOptions = dialog.querySelectorAll('.export-option');
+            exportOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const format = option.getAttribute('data-format');
+                    exportConversationAs(format);
+                    dialog.remove();
+                });
+            });
+            
+            document.body.appendChild(dialog);
+        }
+        
+        // Export conversation in a specific format
+        async function exportConversationAs(format) {
+            if (!currentConversationId) return;
+            
+            try {
+                // Show loading toast
+                showToast('Preparing export...');
+                
+                // Fetch conversation details
+                const response = await fetch(`${API_BASE_URL}conversations/${currentConversationId}`);
+                const conversation = await response.json();
+                
+                // Fetch messages
+                const messagesResponse = await fetch(`${API_BASE_URL}conversations/${currentConversationId}/messages`);
+                const messages = await messagesResponse.json();
+                
+                let content = '';
+                let filename = `kubernetes-agent-conversation-${new Date().toISOString().slice(0, 10)}`;
+                
+                switch (format) {
+                    case 'markdown':
+                        content = generateMarkdownExport(conversation, messages);
+                        filename += '.md';
+                        break;
+                    case 'json':
+                        content = JSON.stringify({ conversation, messages }, null, 2);
+                        filename += '.json';
+                        break;
+                    case 'text':
+                        content = generateTextExport(conversation, messages);
+                        filename += '.txt';
+                        break;
+                }
+                
+                // Download the file
+                downloadAsFile(content, filename);
+                
+                // Show success toast
+                showToast('Export complete!');
+            } catch (error) {
+                console.error('Export error:', error);
+                showError('Failed to export conversation. Please try again.');
+            }
+        }
+        
+        // Generate markdown export
+        function generateMarkdownExport(conversation, messages) {
+            let content = `# Kubernetes AI Agent Conversation\n\n`;
+            content += `**Goal:** ${conversation.goal}\n`;
+            content += `**Date:** ${new Date(conversation.created_at).toLocaleString()}\n\n`;
+            content += `---\n\n`;
+            
+            messages.forEach(msg => {
+                const sender = msg.sender === 'user' ? '👤 User' : '🤖 Kubernetes AI';
+                content += `## ${sender}\n\n`;
+                content += `${msg.content}\n\n`;
+                content += `*${new Date(msg.created_at).toLocaleString()}*\n\n`;
+                content += `---\n\n`;
+            });
+            
+            return content;
+        }
+        
+        // Generate text export
+        function generateTextExport(conversation, messages) {
+            let content = `Kubernetes AI Agent Conversation\n\n`;
+            content += `Goal: ${conversation.goal}\n`;
+            content += `Date: ${new Date(conversation.created_at).toLocaleString()}\n\n`;
+            content += `---\n\n`;
+            
+            messages.forEach(msg => {
+                const sender = msg.sender === 'user' ? 'User' : 'Kubernetes AI';
+                content += `${sender}:\n\n`;
+                content += `${msg.content}\n\n`;
+                content += `(${new Date(msg.created_at).toLocaleString()})\n\n`;
+                content += `---\n\n`;
+            });
+            
+            return content;
+        }
+
+        // Scroll to the bottom of the messages container
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Update status indicator
+        function updateStatus(status, text) {
+            statusDot.className = 'status-dot';
+
+            switch (status) {
+                case 'typing':
+                    statusDot.classList.add('typing');
+                    break;
+                case 'idle':
+                    statusDot.classList.add('idle');
+                    break;
+                case 'error':
+                    statusDot.classList.add('error');
+                    break;
+                case 'connecting':
+                    statusDot.classList.add('typing');
+                    break;
+            }
+
+            statusText.textContent = text;
+        }
+        
+        // Copy text to clipboard
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = 0;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+        
+        // Download content as a file
+        function downloadAsFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+        
+        // Helper function to check if date is today
+        function isToday(date) {
+            const today = new Date();
+            return date.getDate() === today.getDate() &&
+                   date.getMonth() === today.getMonth() &&
+                   date.getFullYear() === today.getFullYear();
+        }
+        
+        // Helper function to check if date is yesterday
+        function isYesterday(date) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            return date.getDate() === yesterday.getDate() &&
+                   date.getMonth() === yesterday.getMonth() &&
+                   date.getFullYear() === yesterday.getFullYear();
+        }
+
+        // Helper function to truncate text
+        function truncateText(text, maxLength) {
+            if (!text) return '';
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+        
+        // Helper function to escape HTML
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+        
+        // Add CSS for additional components
+        function addAdditionalStyles() {
+            const styles = document.createElement('style');
+            styles.textContent = `
+                /* Toast notification is added in the function */
+                
+                /* Export dialog is added in the function */
+            `;
+            document.head.appendChild(styles);
+        }
+        
+        // Call additional styles
+        addAdditionalStyles();
+    </script>
+</body>
+</html>

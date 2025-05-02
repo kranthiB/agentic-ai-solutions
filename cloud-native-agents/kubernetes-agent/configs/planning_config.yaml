@@ -1,0 +1,10 @@
+planner:
+  retry_attempts: 3
+  planning_max_steps: 10
+  default_model: claude-3-5-sonnet-20241022 #claude-3-7-sonnet-20250219
+  temperature: 0.3
+  max_tokens: 2048
+  timeout_seconds: 60
+  provider: "anthropic"           # (optional) OpenAI, Gemini, Anthropic
+  api_key: "YOUR_ANTHROPIC_API_KEY"
+  api_base: "https://api.anthropic.com"  # Optional override

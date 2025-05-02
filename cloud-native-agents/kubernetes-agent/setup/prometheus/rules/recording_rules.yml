@@ -1,0 +1,37 @@
+groups:
+  - name: agent_recording_rules
+    interval: 30s
+    rules:
+      # Precompute expensive queries
+      - record: agent:error_rate:5m
+        expr: sum(rate(agent_tool_failure_total[5m])) / sum(rate(agent_tool_calls_total[5m]))
+        
+      - record: agent:success_rate:5m
+        expr: sum(rate(agent_tool_success_total[5m])) / sum(rate(agent_tool_calls_total[5m]))
+      
+      - record: agent:llm_cost_per_hour
+        expr: sum(increase(agent_llm_cost_usd[1h]))
+      
+      - record: agent:llm_latency:p95
+        expr: histogram_quantile(0.95, sum(rate(agent_llm_latency_seconds_bucket[5m])) by (le, model))
+      
+      - record: agent:llm_latency:p50
+        expr: histogram_quantile(0.5, sum(rate(agent_llm_latency_seconds_bucket[5m])) by (le, model))
+      
+      - record: agent:tasks_per_conversation
+        expr: avg(count by (conversation_id) (agent_tool_calls_total{task_id=~"task_.*"}))
+        
+      - record: agent:conversation_duration:avg
+        expr: avg(agent_task_execution_time_seconds{task_id=~"total_conversation"})
+
+  - name: agent_daily_rules
+    interval: 5m
+    rules:
+      - record: agent:daily_cost
+        expr: sum(increase(agent_llm_cost_usd[24h]))
+      
+      - record: agent:daily_conversations
+        expr: sum(increase(agent_task_duration_seconds_count{task_id=~"conversation_.*"}[24h]))
+      
+      - record: agent:daily_tokens
+        expr: sum(increase(agent_llm_tokens_total[24h]))

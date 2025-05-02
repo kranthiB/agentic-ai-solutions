@@ -1,0 +1,19 @@
+# configs/feedback_config.yaml
+
+feedback:
+  enable_feedback: true                # Enable or disable feedback collection globally
+  feedback_collection_mode: "thumbs"    # Options: thumbs, stars, free-text
+  feedback_question: "Was the action successful and helpful?"  # Question to ask user after task
+  retry_on_no_response: 2               # Retry prompting feedback this many times if no input
+  allow_anonymous_feedback: true        # If true, user identity is not required
+  auto_memory_update_on_positive: true  # If true, agent learns from positive outcomes automatically
+  auto_memory_update_on_negative: true # If true, agent learns from negative outcomes (optional risky)
+  store_feedback_in:                    # Options to store feedback
+    - "redis"
+    - "qdrant"
+  feedback_metadata_to_store:           # Extra metadata to persist along with feedback
+    - "plan_id"
+    - "task_id"
+    - "task_description"
+    - "execution_result"
+    - "timestamp"

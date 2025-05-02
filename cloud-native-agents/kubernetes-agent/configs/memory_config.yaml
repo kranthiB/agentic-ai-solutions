@@ -1,0 +1,14 @@
+memory:
+  short_term:
+    type: redis
+    host: localhost
+    port: 6379
+    namespace: kubernetes-agent-session
+    ttl: 3600
+
+  long_term:
+    type: qdrant
+    host: localhost
+    port: 6333
+    collection_name: kubernetes-agent-knowledge
+    embedding_model: text-embedding-ada-002

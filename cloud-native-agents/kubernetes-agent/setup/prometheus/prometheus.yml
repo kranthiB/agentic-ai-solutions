@@ -1,0 +1,70 @@
+global:
+  scrape_interval: 15s      # Default scrape interval
+  evaluation_interval: 15s  # How frequently to evaluate rules
+  scrape_timeout: 10s       # Timeout for scrape requests
+
+  # External labels for federation, remote storage, etc.
+  external_labels:
+    environment: production
+    region: us-west
+    application: kubernetes-agent
+
+# Alerting configuration
+# For production, you'd usually connect to an Alertmanager instance
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093       # Uncomment when you add Alertmanager
+
+# Rule files to load for alerting and recording rules
+rule_files:
+  - "rules/alert_rules.yml"
+  - "rules/recording_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Pushgateway scrape config - higher priority
+  - job_name: 'pushgateway'
+    honor_labels: true               # Important: preserve labels from pushed metrics
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['pushgateway:9091']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'pushgateway'
+  
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          component: prometheus
+  
+  # Kubernetes agent metrics
+  - job_name: 'kubernetes-agent'
+    scrape_interval: 10s
+    scrape_timeout: 8s
+    static_configs:
+      - targets: ['agent-core:8000']
+        labels:
+          component: agent-core
+          service: kubernetes-agent
+    metric_relabel_configs:
+      # Drop high-cardinality metrics that could cause storage issues
+      - source_labels: [__name__]
+        regex: 'agent_llm_.*_bucket'     # Keep histogram buckets limited
+        action: drop
+
+  # Grafana monitoring
+  - job_name: 'grafana'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['grafana:3000']
+        labels:
+          component: grafana

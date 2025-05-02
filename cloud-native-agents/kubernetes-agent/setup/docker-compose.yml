@@ -1,0 +1,224 @@
+version: '3.8'
+
+services:
+  # Agent Core service
+  agent-core:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - ENVIRONMENT=development
+      - API_HOST=0.0.0.0
+      - API_PORT=8001
+      - LLM_DEFAULT_PROVIDER=anthropic
+      - LLM_ANTHROPIC_API_KEY=${LLM_ANTHROPIC_API_KEY}
+      - LLM_OPENAI_API_KEY=${LLM_OPENAI_API_KEY}
+      - MEMORY_VECTOR_STORE_TYPE=qdrant
+      - MEMORY_VECTOR_STORE_URL=http://qdrant:6333
+      - INTEGRATION_MONGODB_URL=mongodb://mongodb:27017/k8s_agent_platform
+      - INTEGRATION_REDIS_URL=redis://redis:6379/1
+      - LOGGING_LOG_LEVEL=INFO
+      - LOGGING_JSON_LOGS=true
+    volumes:
+      - ${HOME}/.kube:/home/agent/.kube:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      init-mongodb:
+        condition: service_completed_successfully
+      init-qdrant:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - agent-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # MongoDB for conversation storage
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+      - ./mongodb-init.js:/docker-entrypoint-initdb.d/mongodb-init.js:ro
+    environment:
+      - MONGO_INITDB_DATABASE=k8s_agent_platform
+    networks:
+      - agent-network
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - agent-network
+    restart: unless-stopped
+
+  # Initialize MongoDB with more complex setup
+  init-mongodb:
+    image: mongo:6.0
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./mongodb-init.js:/mongodb-init.js:ro
+    command: mongosh mongodb://mongodb:27017/k8s_agent_platform /mongodb-init.js
+    networks:
+      - agent-network
+
+  # Redis for caching and pub/sub
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - agent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Qdrant for vector storage
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - agent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "timeout", "2", "bash", "-c", "</dev/tcp/localhost/6333"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Initialize Qdrant with collections
+  init-qdrant:
+    image: curlimages/curl:latest
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - ./qdrant-init.sh:/qdrant-init.sh:ro
+    command: ["/bin/sh", "/qdrant-init.sh"]
+    networks:
+      - agent-network
+
+  pushgateway:
+    image: prom/pushgateway:latest
+    container_name: pushgateway
+    ports:
+      - "9091:9091"
+    restart: unless-stopped
+    networks:
+      - agent-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:9091"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules:/etc/prometheus/rules  # Add this line
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=10GB'
+      - '--storage.tsdb.wal-compression'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - agent-network
+    depends_on:
+      pushgateway:
+        condition: service_started
+        
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=5s
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_SMTP_ENABLED=false  # Configure if you want email alerts
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - agent-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  agent-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+  redis-data:
+  qdrant-data:
+  prometheus_data:
+  grafana_data:

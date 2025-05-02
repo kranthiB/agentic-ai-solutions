@@ -1,0 +1,28 @@
+paramiko
+ag2[openai,gemini,anthropic]
+prometheus-client
+
+
+# API Gateway dependencies
+fastapi>=0.95.0
+uvicorn>=0.21.1
+websockets>=11.0.1
+pydantic>=2.0.0
+pydantic-extra-types>=2.0.0
+email-validator>=2.0.0
+
+# Authentication
+PyJWT>=2.6.0
+passlib>=1.7.4
+bcrypt>=4.0.1
+python-multipart>=0.0.6
+
+# Storage
+redis>=4.5.4
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml
+kubernetes
+qdrant_client
+sentence_transformers

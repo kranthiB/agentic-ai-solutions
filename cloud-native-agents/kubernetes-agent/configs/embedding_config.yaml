@@ -1,0 +1,10 @@
+# configs/embedding_config.yaml
+
+embedding:
+  provider: "huggingface"          # Options: huggingface, openai, azure, google
+  huggingface_model: "sentence-transformers/all-MiniLM-L6-v2"
+  openai_model: "text-embedding-ada-002"
+  azure_endpoint: "https://your-azure-openai-endpoint"
+  azure_api_key: "your-azure-api-key"
+  azure_deployment_name: "your-deployment"
+  google_model: "embedding-001"

@@ -1,0 +1,62 @@
+groups:
+  - name: agent_alerts
+    rules:
+      # High error rate alerts
+      - alert: HighToolErrorRate
+        expr: sum(rate(agent_tool_failure_total[5m])) / sum(rate(agent_tool_calls_total[5m])) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High tool error rate detected"
+          description: "The agent is experiencing a 20%+ error rate on tool calls over the last 5 minutes."
+
+      # LLM API timeout alerts
+      - alert: HighLLMTimeoutRate
+        expr: sum(rate(agent_llm_timeouts_total[5m])) / sum(rate(agent_llm_calls_total[5m])) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High LLM API timeout rate"
+          description: "LLM API calls are experiencing >10% timeout rate over the last 3 minutes."
+
+      # Cost threshold alerts
+      - alert: DailyCostThresholdExceeded
+        expr: sum(increase(agent_llm_cost_usd[24h])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Daily cost threshold exceeded"
+          description: "The agent has exceeded the $10 daily cost threshold for LLM API usage."
+          
+      # Latency alerts
+      - alert: HighLLMLatency
+        expr: histogram_quantile(0.95, sum(rate(agent_llm_latency_seconds_bucket[5m])) by (le, model)) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High LLM API latency"
+          description: "95th percentile LLM API latency is above 5 seconds for {{ $labels.model }}."
+
+      # Operational alerts
+      - alert: LowAgentActivity
+        expr: sum(increase(agent_task_execution_time_seconds_count[1h])) < 1
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: "Low agent activity detected"
+          description: "The agent has processed fewer than 1 task in the past hour."
+
+      # Pushgateway connectivity
+      - alert: PushgatewayDown
+        expr: up{job="pushgateway"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pushgateway is down"
+          description: "The Prometheus pushgateway is not available, which means metrics from the agent are not being collected."

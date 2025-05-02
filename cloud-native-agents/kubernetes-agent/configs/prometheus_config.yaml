@@ -1,0 +1,8 @@
+prometheus:
+  enabled: true
+  update_interval_seconds: 10
+  push_gateway: "localhost:9091"
+  metrics:
+    track_tokens: true
+    track_cost: true
+    track_retries: true
