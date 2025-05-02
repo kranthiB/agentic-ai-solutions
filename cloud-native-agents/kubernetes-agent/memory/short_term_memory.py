@@ -1,5 +1,6 @@
 # memory/short_term_memory.py
 
+from typing import Optional
 import redis
 import json
 import yaml
@@ -54,3 +55,13 @@ class ShortTermMemory:
 
         self.redis_client.hset(session_id, mapping={"context": json.dumps(current_context)})
         self.redis_client.expire(session_id, self.ttl)  # refresh TTL after each update
+
+# Singleton instance
+_short_term_memory: Optional[ShortTermMemory] = None
+
+
+def get_short_term_memory() -> ShortTermMemory:
+    global _short_term_memory
+    if _short_term_memory is None:
+        _short_term_memory = ShortTermMemory()
+    return _short_term_memory

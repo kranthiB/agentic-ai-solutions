@@ -16,7 +16,7 @@ from planning.task_executor import TaskExecutor
 from feedback_learning.feedback_collector import FeedbackCollector
 from feedback_learning.feedback_store import FeedbackStore
 from feedback_learning.learning_manager import LearningManager
-from memory.short_term_memory import ShortTermMemory
+from memory.short_term_memory import get_short_term_memory
 from memory.long_term_memory import get_long_term_memory
 
 # Import monitoring components
@@ -64,7 +64,7 @@ class ConversationManagerAPI:
 
             # Memory Managers
             self.logger.info("Initializing Memory components")
-            self.short_term_memory = ShortTermMemory()
+            self.short_term_memory = get_short_term_memory()
             self.long_term_memory = get_long_term_memory()
 
             # Feedback and Learning
