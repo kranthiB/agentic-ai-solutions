@@ -12,7 +12,7 @@ import uuid
 
 # Import original conversation manager
 from core.agent import get_kubernetes_agent
-from planning.planner import Planner
+from planning.planner import get_planner
 from planning.task_executor import TaskExecutor
 from feedback_learning.feedback_collector import FeedbackCollector
 from feedback_learning.feedback_store import FeedbackStore
@@ -60,7 +60,7 @@ class ConversationManagerAPI:
 
             # Planner and Executor
             self.logger.info("Creating Planner and TaskExecutor")
-            self.planner = Planner()
+            self.planner = get_planner()
             self.executor = TaskExecutor()
 
             # Memory Managers

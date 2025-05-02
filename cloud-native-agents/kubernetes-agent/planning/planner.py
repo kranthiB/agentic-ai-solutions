@@ -2,6 +2,7 @@
 
 import datetime
 import time
+from typing import Optional
 import uuid
 import yaml
 from planning.task_decomposer import TaskDecomposer
@@ -140,3 +141,12 @@ class Planner:
                 "failed_plan_creation", start_time, end_time, goal_category
             )
             raise
+
+# Singleton instance
+_planner: Optional[Planner] = None
+
+def get_planner() -> Planner:
+    global _planner
+    if _planner is None:
+        _planner = Planner()
+    return _planner
