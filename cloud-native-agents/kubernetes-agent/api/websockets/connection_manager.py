@@ -7,8 +7,6 @@ from api.models.websocket_message import WebSocketMessage
 
 from monitoring.agent_logger import get_logger
 
-logger = get_logger(__name__)
-
 class ConnectionManager:
     """
     Manages WebSocket connections and message broadcasting
@@ -16,18 +14,19 @@ class ConnectionManager:
     
     def __init__(self):
         # Map conversation_id -> list of connected websockets
-        self.active_connections: Dict[str, WebSocket] = {}
+        self.active_connections: Dict[str, List[WebSocket]] = {}
+        self.logger = get_logger(__name__)
         
     async def connect(self, websocket: WebSocket, conversation_id: str):
         """
         Connect a new WebSocket client
         """
         await websocket.accept()
-        if conversation_id in self.active_connections:
-            del self.active_connections[conversation_id]
+        if conversation_id not in self.active_connections:
+            self.active_connections[conversation_id] = []
+        self.active_connections[conversation_id].append(websocket)
 
-        self.active_connections[conversation_id] = websocket
-        logger.info(f"New WebSocket connection for conversation {conversation_id}")
+        self.logger.info(f"New WebSocket connection for conversation {conversation_id}")
         
         # Send initial connection confirmation
         await self.send_personal_message(
@@ -39,13 +38,20 @@ class ConnectionManager:
             websocket
         )
     
-    def disconnect(self, conversation_id: str):
+    def disconnect(self, websocket: WebSocket, conversation_id: str):
         """
         Disconnect a WebSocket client
         """
+        self.logger.info(f"Disconnecting WebSocket for conversation {conversation_id} and websocket {websocket}")
         if conversation_id in self.active_connections:
-            del self.active_connections[conversation_id]
-        logger.info(f"WebSocket disconnected from conversation {conversation_id}")
+            self.active_connections[conversation_id] = [
+                ws for ws in self.active_connections[conversation_id] if ws != websocket
+            ]
+            # Clean up if list becomes empty
+            if not self.active_connections[conversation_id]:
+                del self.active_connections[conversation_id]
+
+        self.logger.info(f"WebSocket disconnected from conversation {conversation_id}")
     
     async def send_personal_message(self, message: WebSocketMessage, websocket: WebSocket):
         """
@@ -54,7 +60,7 @@ class ConnectionManager:
         try:
             await websocket.send_text(message.to_json())
         except Exception as e:
-            logger.error(f"Error sending WebSocket message: {str(e)}")
+            self.logger.error(f"Error sending WebSocket message: {str(e)}")
     
     async def broadcast(self, message: WebSocketMessage):
         """
@@ -62,21 +68,16 @@ class ConnectionManager:
         """
         conversation_id = message.conversation_id
         if conversation_id not in self.active_connections:
-            logger.warning(f"No active connections for conversation {conversation_id}")
+            self.logger.warning(f"No active connections for conversation {conversation_id}")
             return
-        
-        websocket = self.active_connections[conversation_id]
-        if websocket:
-            try:
-                await websocket.send_text(message.to_json())
-            except Exception as e:
-                logger.error(f"Error broadcasting message: {str(e)}")
-                self.disconnect(conversation_id)
-        else:
-            logger.error(f"No WebSocket found for conversation {conversation_id}")
+        try:
+            if conversation_id in self.active_connections:
+                for websocket in self.active_connections[conversation_id]:
+                    await websocket.send_text(message)
+        except Exception as e:
+            self.logger.error(f"Error broadcasting message: {str(e)}")
             self.disconnect(conversation_id)
 
-    
     async def broadcast_task_status(self, conversation_id: str, task_id: str, status: str, details: Dict[str, Any] = None):
         """
         Broadcast a task status update
