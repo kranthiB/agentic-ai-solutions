@@ -1,6 +1,6 @@
 # kubernetes_agent/planning/plan_improver.py
 
-from typing import Dict
+from typing import Dict, Optional
 from memory.long_term_memory import get_long_term_memory
 from monitoring.agent_logger import get_logger
 
@@ -51,3 +51,12 @@ class PlanImprover:
             self.logger.info(f"🧠 {len(applied_insights)} insights added to plan from memory")
 
         return plan
+
+# Singleton instance
+_plan_improver: Optional[PlanImprover] = None
+
+def get_plan_improver() -> PlanImprover:
+    global _plan_improver
+    if _plan_improver is None:
+        _plan_improver = PlanImprover()
+    return _plan_improver
