@@ -120,8 +120,8 @@ async def update_conversation_service_task_status(
         result: Optional result data
     """
     try:
-        from services.conversation.conversation_service import ConversationService
-        conversation_service = ConversationService()
+        from services.conversation.conversation_service import get_conversation_service
+        conversation_service = get_conversation_service()
         await conversation_service.update_task_status(
             conversation_id=conversation_id,
             task_id=task_id,

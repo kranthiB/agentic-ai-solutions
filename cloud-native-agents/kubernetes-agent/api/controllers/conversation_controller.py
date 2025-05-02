@@ -13,7 +13,7 @@ from api.models.conversation import (
 )
 
 # Import services
-from services.conversation.conversation_service import ConversationService
+from services.conversation.conversation_service import get_conversation_service
 from api.websockets.connection_manager import ConnectionManager
 
 from monitoring.agent_logger import get_logger
@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 # Initialize services
-conversation_service = ConversationService()
+conversation_service = get_conversation_service()
 connection_manager = ConnectionManager()
 
 @router.post("/", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)

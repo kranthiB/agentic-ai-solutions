@@ -67,6 +67,47 @@ class ConversationService:
         logger.info(f"Created conversation {conversation_id} for user {user_id}")
         return conversation_data
     
+    async def delete_conversation(self, conversation_id: str, user_id: Optional[str] = None):
+        """
+        Delete a conversation by ID
+        
+        Args:
+            conversation_id: ID of the conversation to delete
+            user_id: Optional user ID to verify ownership
+            
+        Returns:
+            None
+        """
+        conversation_key = f"conversation:{conversation_id}"
+        
+        # Check if conversation exists
+        if not self.redis.exists(conversation_key):
+            logger.warning(f"Conversation {conversation_id} not found")
+            return
+        
+        # If user_id provided, verify ownership
+        if user_id:
+            conversation_json = self.redis.hget(conversation_key, "data")
+            if not conversation_json:
+                logger.warning(f"Conversation {conversation_id} not found")
+                return
+            
+            conversation = json.loads(conversation_json)
+            if conversation.get("user_id") != user_id:
+                logger.warning(f"User {user_id} attempted to delete conversation {conversation_id} (owned by {conversation.get('user_id')})")
+                return
+        
+        # Delete the conversation
+        self.redis.delete(conversation_key)
+        
+        # Remove from user's conversations list
+        if user_id:
+            user_conversations_key = f"user:{user_id}:conversations"
+            self.redis.zrem(user_conversations_key, conversation_id)
+        
+        logger.info(f"Deleted conversation {conversation_id}")
+
+
     async def get_conversation(
         self, 
         conversation_id: str,
@@ -428,3 +469,12 @@ class ConversationService:
                 return
         
         logger.warning(f"Task {task_id} not found in plan for conversation {conversation_id}")
+
+# Singleton instance
+_conversation_service: Optional[ConversationService] = None
+
+def get_conversation_service() -> ConversationService:
+    global _conversation_service
+    if _conversation_service is None:
+        _conversation_service = ConversationService()
+    return _conversation_service
