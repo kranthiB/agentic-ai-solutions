@@ -8,7 +8,7 @@ from monitoring.agent_logger import get_logger
 from monitoring.metrics_collector import get_metrics_collector
 from monitoring.event_audit_log import get_audit_logger
 from memory.long_term_memory import get_long_term_memory
-from reflection.retry_policy import RetryPolicy
+from reflection.retry_policy import get_retry_policy
 from planning.task_executor import get_task_executor  # <-- updated
 
 class ReflectionEngine:
@@ -17,7 +17,7 @@ class ReflectionEngine:
         self.metrics = get_metrics_collector()
         self.audit = get_audit_logger()
         self.long_term_memory = get_long_term_memory()
-        self.retry_policy = RetryPolicy(max_retries=max_retries)
+        self.retry_policy = get_retry_policy(max_retries=max_retries)
         self.task_executor = get_task_executor()  # <-- use your actual executor
 
     async def reflect_on_tasks(

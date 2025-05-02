@@ -1,6 +1,6 @@
 # kubernetes_agent/reflection/retry_policy.py
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from monitoring.agent_logger import get_logger
 
 logger = get_logger(__name__)
@@ -42,3 +42,15 @@ class RetryPolicy:
 
         logger.info(f"🛑 Retry not allowed for task {task_id}: error not retryable")
         return False
+
+
+# Singleton instance
+_retry_policy: Optional[RetryPolicy] = None
+
+def get_retry_policy(max_retries: int) -> RetryPolicy:
+    global _retry_policy
+    if _retry_policy is None:
+        if max_retries < 1:
+            _retry_policy = RetryPolicy()
+        _retry_policy = RetryPolicy(max_retries=max_retries)
+    return _retry_policy
