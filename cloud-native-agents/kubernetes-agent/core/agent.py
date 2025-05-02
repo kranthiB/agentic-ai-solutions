@@ -2,6 +2,7 @@
 
 import os
 import time
+from typing import Optional
 from autogen import ConversableAgent, config_list_from_json, register_function,  LLMConfig
 
 # Import your system prompt
@@ -553,3 +554,13 @@ class KubernetesAgent:
     def get_executor_agent(self) -> ConversableAgent:
         """Returns the executor agent"""
         return self.executor_agent
+
+
+# Singleton instance
+_kubernetes_agent: Optional[KubernetesAgent] = None
+
+def get_kubernetes_agent() -> KubernetesAgent:
+    global _kubernetes_agent
+    if _kubernetes_agent is None:
+        _kubernetes_agent = KubernetesAgent()
+    return _kubernetes_agent

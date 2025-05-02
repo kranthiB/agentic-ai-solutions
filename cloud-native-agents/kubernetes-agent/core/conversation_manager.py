@@ -3,7 +3,7 @@ import datetime
 import time
 import traceback
 import uuid
-from core.agent import KubernetesAgent
+from core.agent import get_kubernetes_agent
 from planning.planner import Planner
 from planning.task_executor import TaskExecutor
 from feedback_learning.feedback_collector import FeedbackCollector
@@ -40,7 +40,7 @@ class ConversationManager:
         try:
             # Agent Initialization
             self.logger.info("Creating KubernetesAgent")
-            self.agent_obj = KubernetesAgent()
+            self.agent_obj = get_kubernetes_agent()
             self.kube_agent = self.agent_obj.get_agent()
             self.executor_agent = self.agent_obj.get_executor_agent()
 
