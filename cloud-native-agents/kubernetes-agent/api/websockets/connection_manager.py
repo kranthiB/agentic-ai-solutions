@@ -1,6 +1,6 @@
 # api/websockets/connection_manager.py
 from fastapi import WebSocket
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 # Import the WebSocketMessage model
 from api.models.websocket_message import WebSocketMessage
@@ -16,16 +16,17 @@ class ConnectionManager:
     
     def __init__(self):
         # Map conversation_id -> list of connected websockets
-        self.active_connections: Dict[str, List[WebSocket]] = {}
+        self.active_connections: Dict[str, WebSocket] = {}
         
     async def connect(self, websocket: WebSocket, conversation_id: str):
         """
         Connect a new WebSocket client
         """
         await websocket.accept()
-        if conversation_id not in self.active_connections:
-            self.active_connections[conversation_id] = []
-        self.active_connections[conversation_id].append(websocket)
+        if conversation_id in self.active_connections:
+            del self.active_connections[conversation_id]
+
+        self.active_connections[conversation_id] = websocket
         logger.info(f"New WebSocket connection for conversation {conversation_id}")
         
         # Send initial connection confirmation
@@ -38,16 +39,12 @@ class ConnectionManager:
             websocket
         )
     
-    def disconnect(self, websocket: WebSocket, conversation_id: str):
+    def disconnect(self, conversation_id: str):
         """
         Disconnect a WebSocket client
         """
         if conversation_id in self.active_connections:
-            if websocket in self.active_connections[conversation_id]:
-                self.active_connections[conversation_id].remove(websocket)
-            # Clean up empty conversation lists
-            if not self.active_connections[conversation_id]:
-                del self.active_connections[conversation_id]
+            del self.active_connections[conversation_id]
         logger.info(f"WebSocket disconnected from conversation {conversation_id}")
     
     async def send_personal_message(self, message: WebSocketMessage, websocket: WebSocket):
@@ -67,19 +64,18 @@ class ConnectionManager:
         if conversation_id not in self.active_connections:
             logger.warning(f"No active connections for conversation {conversation_id}")
             return
-            
-        disconnected_websockets = []
         
-        for websocket in self.active_connections[conversation_id]:
+        websocket = self.active_connections[conversation_id]
+        if websocket:
             try:
                 await websocket.send_text(message.to_json())
             except Exception as e:
                 logger.error(f"Error broadcasting message: {str(e)}")
-                disconnected_websockets.append(websocket)
-        
-        # Clean up any disconnected websockets
-        for websocket in disconnected_websockets:
-            self.disconnect(websocket, conversation_id)
+                self.disconnect(conversation_id)
+        else:
+            logger.error(f"No WebSocket found for conversation {conversation_id}")
+            self.disconnect(conversation_id)
+
     
     async def broadcast_task_status(self, conversation_id: str, task_id: str, status: str, details: Dict[str, Any] = None):
         """
@@ -139,3 +135,12 @@ class ConnectionManager:
                 }
             )
         )
+
+# Singleton instance
+_connection_manager: Optional[ConnectionManager] = None
+
+def get_connection_manager() -> ConnectionManager:
+    global _connection_manager
+    if _connection_manager is None:
+        _connection_manager = ConnectionManager()
+    return _connection_manager

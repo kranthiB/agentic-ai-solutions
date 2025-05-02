@@ -5,7 +5,7 @@ import json
 
 # Import controllers
 from api.controllers.conversation_controller import router as conversation_router
-from api.websockets.connection_manager import ConnectionManager
+from api.websockets.connection_manager import get_connection_manager
 from api.models.websocket_message import WebSocketMessage
 
 from monitoring.agent_logger import get_logger
@@ -28,7 +28,7 @@ app.add_middleware(
 )
 
 # Create WebSocket connection manager
-connection_manager = ConnectionManager()
+connection_manager = get_connection_manager()
 
 # Include API routers
 app.include_router(

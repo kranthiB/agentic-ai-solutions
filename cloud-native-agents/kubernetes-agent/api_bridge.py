@@ -2,21 +2,11 @@
 from typing import Dict, List, Any, Optional
 
 from monitoring.agent_logger import get_logger
+from api.websockets.connection_manager import get_connection_manager
 
 logger = get_logger(__name__)
 
-def get_connection_manager():
-    """
-    Safely import the ConnectionManager
-    
-    Returns ConnectionManager instance or None if not available
-    """
-    try:
-        from api.websockets.connection_manager import ConnectionManager
-        return ConnectionManager()
-    except ImportError:
-        logger.warning("WebSocket ConnectionManager not available - status updates disabled")
-        return None
+connection_manager = get_connection_manager()
 
 async def send_plan_update(conversation_id: str, plan_id: str, tasks: List[Dict[str, Any]]):
     """
@@ -27,7 +17,6 @@ async def send_plan_update(conversation_id: str, plan_id: str, tasks: List[Dict[
         plan_id: ID of the plan
         tasks: List of tasks in the plan
     """
-    connection_manager = get_connection_manager()
     if connection_manager:
         await connection_manager.broadcast_plan_update(
             conversation_id=conversation_id,
@@ -53,7 +42,6 @@ async def send_task_update(
         status: Current status (pending, in_progress, completed, failed)
         details: Optional additional details
     """
-    connection_manager = get_connection_manager()
     if connection_manager:
         await connection_manager.broadcast_task_status(
             conversation_id=conversation_id,
@@ -73,7 +61,6 @@ async def send_thinking_status(conversation_id: str, is_thinking: bool = True):
         conversation_id: ID of the conversation
         is_thinking: Whether the agent is thinking
     """
-    connection_manager = get_connection_manager()
     if connection_manager:
         await connection_manager.broadcast_agent_thinking(
             conversation_id=conversation_id,
@@ -92,7 +79,6 @@ async def send_error(conversation_id: str, error_message: str, error_code: str =
         error_message: Error message text
         error_code: Error code for categorization
     """
-    connection_manager = get_connection_manager()
     if connection_manager:
         await connection_manager.broadcast_error(
             conversation_id=conversation_id,

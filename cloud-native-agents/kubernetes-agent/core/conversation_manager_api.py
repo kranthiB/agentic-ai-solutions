@@ -117,6 +117,7 @@ class ConversationManagerAPI:
             Combined task results as a formatted string
         """
         # Use provided conversation_id or generate a new one
+        self.logger.info("In run conversations, Is web socket enabled?: %s", WEBSOCKET_ENABLED)
         if conversation_id is None:
             conversation_id = str(uuid.uuid4())
             
