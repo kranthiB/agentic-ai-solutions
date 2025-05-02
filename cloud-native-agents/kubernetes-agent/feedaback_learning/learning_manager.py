@@ -2,7 +2,7 @@
 # await self.learning_manager.process_feedback(feedback)
 import yaml
 from feedback_learning.feedback_types import FeedbackResult
-from memory.memory_store import MemoryStore  # Assuming you already have memory_store.py
+from memory.memory_store import get_memory_store
 from datetime import datetime
 
 class LearningManager:
@@ -17,7 +17,7 @@ class LearningManager:
         self.auto_memory_update_on_negative = feedback_config.get("auto_memory_update_on_negative", False)
 
         # Memory store instance (Redis + Qdrant handled internally)
-        self.memory_store = MemoryStore()
+        self.memory_store = get_memory_store()
 
     async def process_feedback(self, feedback: dict):
         """

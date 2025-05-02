@@ -1,5 +1,6 @@
 # memory/memory_store.py
 
+from typing import Optional
 import yaml
 import qdrant_client
 from qdrant_client.models import VectorParams
@@ -114,3 +115,14 @@ class MemoryStore:
         )
         
         print(f"✅ Memory stored with id: {point_id}")
+
+
+# Singleton instance
+_memory_store: Optional[MemoryStore] = None
+
+
+def get_memory_store() -> MemoryStore:
+    global _memory_store
+    if _memory_store is None:
+        _memory_store = MemoryStore()
+    return _memory_store
