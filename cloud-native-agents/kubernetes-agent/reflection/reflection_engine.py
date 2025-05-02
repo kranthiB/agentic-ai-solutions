@@ -2,7 +2,7 @@
 
 import time
 import uuid
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from monitoring.agent_logger import get_logger
 from monitoring.metrics_collector import get_metrics_collector
@@ -107,3 +107,12 @@ class ReflectionEngine:
             )
 
         return summary
+
+# Singleton instance
+_reflection_engine: Optional[ReflectionEngine] = None
+
+def get_reflection_engine() -> ReflectionEngine:
+    global _reflection_engine
+    if _reflection_engine is None:
+        _reflection_engine = ReflectionEngine()
+    return _reflection_engine

@@ -26,7 +26,7 @@ from monitoring.cost_tracker import get_cost_tracker
 from monitoring.metrics_collector import get_metrics_collector
 from monitoring.event_audit_log import get_audit_logger
 
-from reflection.reflection_engine import ReflectionEngine
+from reflection.reflection_engine import get_reflection_engine
 
 # Import API bridge for WebSocket updates
 try:
@@ -44,7 +44,7 @@ class ConversationManagerAPI:
         self.cost_tracker = get_cost_tracker()
         self.metrics = get_metrics_collector()
         self.audit = get_audit_logger()
-        self.reflection_engine = ReflectionEngine()
+        self.reflection_engine = get_reflection_engine()
         
         self.logger.info("Initializing ConversationManagerAPI with WebSocket integration")
         
