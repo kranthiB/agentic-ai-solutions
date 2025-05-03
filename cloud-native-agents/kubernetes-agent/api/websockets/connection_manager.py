@@ -15,6 +15,8 @@ class ConnectionManager:
     def __init__(self):
         # Map conversation_id -> list of connected websockets
         self.active_connections: Dict[str, List[WebSocket]] = {}
+        # Map conversation_id -> session state
+        self.session_states: Dict[str, Dict[str, Any]] = {}
         self.logger = get_logger(__name__)
         
     async def connect(self, websocket: WebSocket, conversation_id: str):
@@ -28,12 +30,22 @@ class ConnectionManager:
 
         self.logger.info(f"New WebSocket connection for conversation {conversation_id}")
         
-        # Send initial connection confirmation
+        # Initialize session state if needed
+        if conversation_id not in self.session_states:
+            self.session_states[conversation_id] = {
+                "status": "connected",
+                "connection_time": self._get_current_timestamp()
+            }
+        
+        # Send initial connection confirmation with current state
         await self.send_personal_message(
             WebSocketMessage(
                 type="connection_established",
                 conversation_id=conversation_id,
-                content={"status": "connected"}
+                content={
+                    "status": "connected",
+                    "state": self.session_states[conversation_id]
+                }
             ),
             websocket
         )
@@ -50,6 +62,8 @@ class ConnectionManager:
             # Clean up if list becomes empty
             if not self.active_connections[conversation_id]:
                 del self.active_connections[conversation_id]
+                # Optionally, preserve session state even after all connections are closed
+                # del self.session_states[conversation_id]
 
         self.logger.info(f"WebSocket disconnected from conversation {conversation_id}")
     
@@ -82,6 +96,18 @@ class ConnectionManager:
         """
         Broadcast a task status update
         """
+        # Update session state first
+        if conversation_id in self.session_states:
+            if "tasks" not in self.session_states[conversation_id]:
+                self.session_states[conversation_id]["tasks"] = {}
+            
+            self.session_states[conversation_id]["tasks"][task_id] = {
+                "description": task_description,
+                "status": status,
+                "updated_at": self._get_current_timestamp(),
+                **(details or {})
+            }
+        
         await self.broadcast(
             WebSocketMessage(
                 type="task_status",
@@ -99,6 +125,11 @@ class ConnectionManager:
         """
         Broadcast agent thinking status (for typing indicators)
         """
+        # Update session state
+        if conversation_id in self.session_states:
+            self.session_states[conversation_id]["agent_thinking"] = is_thinking
+            self.session_states[conversation_id]["last_thinking_update"] = self._get_current_timestamp()
+        
         await self.broadcast(
             WebSocketMessage(
                 type="agent_thinking",
@@ -111,6 +142,15 @@ class ConnectionManager:
         """
         Broadcast plan updates
         """
+        # Update session state
+        if conversation_id in self.session_states:
+            self.session_states[conversation_id]["plan"] = {
+                "plan_id": plan_id,
+                "task_count": len(tasks),
+                "tasks": tasks,
+                "created_at": self._get_current_timestamp()
+            }
+        
         await self.broadcast(
             WebSocketMessage(
                 type="plan_update",
@@ -127,6 +167,17 @@ class ConnectionManager:
         """
         Broadcast an error message
         """
+        # Update session state
+        if conversation_id in self.session_states:
+            if "errors" not in self.session_states[conversation_id]:
+                self.session_states[conversation_id]["errors"] = []
+            
+            self.session_states[conversation_id]["errors"].append({
+                "message": error_message,
+                "code": error_code,
+                "timestamp": self._get_current_timestamp()
+            })
+        
         await self.broadcast(
             WebSocketMessage(
                 type="error",
@@ -153,6 +204,18 @@ class ConnectionManager:
             message: Warning message text
             details: Additional warning details
         """
+        # Update session state
+        if conversation_id in self.session_states:
+            if "guardrail_warnings" not in self.session_states[conversation_id]:
+                self.session_states[conversation_id]["guardrail_warnings"] = []
+            
+            self.session_states[conversation_id]["guardrail_warnings"].append({
+                "warning_type": warning_type,
+                "message": message,
+                "details": details or {},
+                "timestamp": self._get_current_timestamp()
+            })
+        
         await self.broadcast(
             WebSocketMessage(
                 type="guardrail_warning",
@@ -179,6 +242,18 @@ class ConnectionManager:
             reason: Reason for the block
             details: Additional block details
         """
+        # Update session state
+        if conversation_id in self.session_states:
+            if "guardrail_blocks" not in self.session_states[conversation_id]:
+                self.session_states[conversation_id]["guardrail_blocks"] = []
+            
+            self.session_states[conversation_id]["guardrail_blocks"].append({
+                "block_type": block_type,
+                "reason": reason,
+                "details": details or {},
+                "timestamp": self._get_current_timestamp()
+            })
+        
         await self.broadcast(
             WebSocketMessage(
                 type="guardrail_block",
@@ -211,6 +286,21 @@ class ConnectionManager:
             requires_approval: Whether explicit approval is required
             mitigation_steps: Recommended mitigation steps
         """
+        # Update session state
+        if conversation_id in self.session_states:
+            if "risk_assessments" not in self.session_states[conversation_id]:
+                self.session_states[conversation_id]["risk_assessments"] = []
+            
+            self.session_states[conversation_id]["risk_assessments"].append({
+                "operation": operation,
+                "resource_type": resource_type,
+                "namespace": namespace,
+                "risk_level": risk_level,
+                "requires_approval": requires_approval,
+                "mitigation_steps": mitigation_steps or [],
+                "timestamp": self._get_current_timestamp()
+            })
+        
         await self.broadcast(
             WebSocketMessage(
                 type="risk_assessment",
@@ -248,6 +338,22 @@ class ConnectionManager:
             request_id: Unique ID for the approval request
             explanation: Optional explanation of risks
         """
+        # Update session state
+        if conversation_id in self.session_states:
+            if "approval_requests" not in self.session_states[conversation_id]:
+                self.session_states[conversation_id]["approval_requests"] = {}
+            
+            self.session_states[conversation_id]["approval_requests"][request_id] = {
+                "operation": operation,
+                "resource_type": resource_type,
+                "resource_name": resource_name,
+                "namespace": namespace,
+                "risk_level": risk_level,
+                "explanation": explanation or f"High-risk operation '{operation}' on {resource_type}/{resource_name} requires approval",
+                "status": "pending",
+                "timestamp": self._get_current_timestamp()
+            }
+        
         await self.broadcast(
             WebSocketMessage(
                 type="approval_request",
@@ -263,6 +369,140 @@ class ConnectionManager:
                 }
             )
         )
+    
+    # New methods for enhanced session state management
+    async def update_session_state(self, conversation_id: str, state_update: Dict[str, Any]):
+        """
+        Update the session state for a conversation
+        
+        Args:
+            conversation_id: ID of the conversation
+            state_update: Dictionary of state updates to apply
+        """
+        if conversation_id not in self.session_states:
+            self.session_states[conversation_id] = {}
+        
+        # Update the state
+        self.session_states[conversation_id].update(state_update)
+        
+        # Broadcast the state update
+        await self.broadcast(
+            WebSocketMessage(
+                type="session_state_update",
+                conversation_id=conversation_id,
+                content={"state": state_update}
+            )
+        )
+        
+    def get_session_state(self, conversation_id: str) -> Dict[str, Any]:
+        """
+        Get the current session state for a conversation
+        
+        Args:
+            conversation_id: ID of the conversation
+            
+        Returns:
+            The current session state dictionary
+        """
+        return self.session_states.get(conversation_id, {})
+    
+    async def broadcast_progress_update(self, conversation_id: str, 
+                                     progress_type: str, 
+                                     percentage: float,
+                                     current_step: int = None,
+                                     total_steps: int = None,
+                                     step_description: str = None):
+        """
+        Broadcast a progress update for long-running operations
+        
+        Args:
+            conversation_id: ID of the conversation
+            progress_type: Type of progress (plan, task, analysis)
+            percentage: Completion percentage (0-100)
+            current_step: Current step number (optional)
+            total_steps: Total number of steps (optional)
+            step_description: Description of current step (optional)
+        """
+        # Update session state first
+        state_update = {
+            f"{progress_type}_progress": {
+                "percentage": percentage,
+                "current_step": current_step,
+                "total_steps": total_steps,
+                "step_description": step_description,
+                "updated_at": self._get_current_timestamp()
+            }
+        }
+        if conversation_id in self.session_states:
+            self.session_states[conversation_id].update(state_update)
+        
+        # Then broadcast detailed progress update
+        await self.broadcast(
+            WebSocketMessage(
+                type="progress_update",
+                conversation_id=conversation_id,
+                content={
+                    "progress_type": progress_type,
+                    "percentage": percentage,
+                    "current_step": current_step,
+                    "total_steps": total_steps,
+                    "step_description": step_description
+                }
+            )
+        )
+    
+    async def broadcast_conversation_summary_update(self, conversation_id: str, summary: str):
+        """
+        Broadcast an updated conversation summary
+        
+        Args:
+            conversation_id: ID of the conversation
+            summary: Current conversation summary
+        """
+        # Update session state
+        if conversation_id in self.session_states:
+            self.session_states[conversation_id]["conversation_summary"] = {
+                "text": summary,
+                "updated_at": self._get_current_timestamp()
+            }
+        
+        # Broadcast the update
+        await self.broadcast(
+            WebSocketMessage(
+                type="conversation_summary",
+                conversation_id=conversation_id,
+                content={"summary": summary}
+            )
+        )
+    
+    async def broadcast_conversation_context(self, conversation_id: str, context_items: List[Dict[str, Any]]):
+        """
+        Broadcast current conversation context items to clients
+        
+        Args:
+            conversation_id: ID of the conversation
+            context_items: List of context items with their metadata
+        """
+        # Update session state
+        if conversation_id in self.session_states:
+            self.session_states[conversation_id]["context_items"] = {
+                "items": context_items,
+                "updated_at": self._get_current_timestamp()
+            }
+        
+        # Broadcast the context
+        await self.broadcast(
+            WebSocketMessage(
+                type="conversation_context",
+                conversation_id=conversation_id,
+                content={"context_items": context_items}
+            )
+        )
+    
+    def _get_current_timestamp(self) -> str:
+        """Get the current timestamp in ISO format"""
+        from datetime import datetime, timezone
+        return datetime.now(timezone.utc).isoformat()
 
 # Singleton instance
 _connection_manager: Optional[ConnectionManager] = None

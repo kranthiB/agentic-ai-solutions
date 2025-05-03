@@ -17,6 +17,10 @@ from monitoring.event_audit_log import get_audit_logger
 # Import guardrail service
 from services.guardrail.guardrail_service import get_guardrail_service
 
+# Import memory components for enhanced integration
+from memory.short_term_memory import get_short_term_memory
+from memory.long_term_memory import get_long_term_memory
+
 class TaskExecutor:
     """Handles execution of individual planned tasks using agent + tools."""
 
@@ -36,6 +40,10 @@ class TaskExecutor:
 
         # Initialize guardrail service
         self.guardrail_service = get_guardrail_service()
+        
+        # Initialize memory components
+        self.short_term_memory = get_short_term_memory()
+        self.long_term_memory = get_long_term_memory()
         
         # Record initialization
         self.metrics.record_tool_call("task_executor_initialized")
@@ -105,22 +113,60 @@ class TaskExecutor:
                 conversation_id=conversation_id
             )
 
+            # Check if there's a session_id in the task context
+            session_id = None
+            if "context" in task and task["context"]:
+                context = task["context"]
+                if "session_id" in context:
+                    session_id = context["session_id"]
+            
+            # Attempt to find similar previous tasks in long-term memory
+            similar_tasks = []
+            try:
+                similar_tasks = await self.long_term_memory.get_task_history(
+                    task_description=task_description,
+                    limit=3
+                )
+                if similar_tasks:
+                    self.logger.info(f"Found {len(similar_tasks)} similar historical tasks for reference")
+            except Exception as e:
+                self.logger.warning(f"Error retrieving similar tasks: {str(e)}")
+            
             self.logger.info("Asking agent how to accomplish task: %s", task_description)
             
+            # Build enhanced context with conversation history and similar tasks
             context_info = ""
             if "context" in task and task["context"]:
                 context = task["context"]
-                history_summary = "\n".join([
-                    f"{msg['sender']}: {msg['content']}" 
-                    for msg in context.get("history", [])[:5]  # Last 5 messages for brevity
-                ])
-
-            context_info = f"""
-            Previous conversation:
-            {history_summary}
-
-            Original goal: {context.get('goal', 'Not specified')}
-            """
+                
+                # Include conversation history if available
+                history_summary = ""
+                if "history" in context and context["history"]:
+                    messages = context["history"]
+                    history_summary = "\n".join([
+                        f"{msg['sender']}: {msg['content']}" 
+                        for msg in messages[:5]  # Last 5 messages for brevity
+                    ])
+                
+                # Include similar tasks if available
+                similar_tasks_info = ""
+                if similar_tasks:
+                    similar_tasks_info = "Similar tasks from previous conversations:\n"
+                    for i, task in enumerate(similar_tasks, 1):
+                        task_result = task.get("response", "No result available")
+                        if isinstance(task_result, str) and len(task_result) > 200:
+                            task_result = task_result[:200] + "..."
+                        similar_tasks_info += f"{i}. Task: {task.get('description')}\n   Result: {task_result}\n"
+                
+                # Build the complete context info
+                context_info = f"""
+                Previous conversation:
+                {history_summary}
+                
+                {similar_tasks_info}
+                
+                Original goal: {context.get('goal', 'Not specified')}
+                """
 
             user_prompt = f"""Context: {context_info}
 
@@ -327,6 +373,35 @@ class TaskExecutor:
                         temperature=0.3  # Use actual temperature if available
                     )
                 
+                # Store task result in short-term memory if session_id is available
+                if session_id:
+                    # Store as a task result in short-term memory
+                    self.short_term_memory.update_context(
+                        session_id=session_id,
+                        task={
+                            "id": task_id,
+                            "description": task_description
+                        },
+                        feedback={
+                            "feedback_result": "success" if action and parameters else "unknown"
+                        }
+                    )
+                    
+                    # Additionally, store the full task response for context
+                    self.short_term_memory.store_context_item(
+                        session_id=session_id,
+                        item_type="task_results",
+                        data={
+                            task_id: {
+                                "description": task_description,
+                                "response": agent_task_response,
+                                "action": action,
+                                "parameters": parameters if parameters else {},
+                                "executed_at": datetime.datetime.now().isoformat()
+                            }
+                        }
+                    )
+                
                 # Calculate execution duration
                 end_time = time.time()
                 execution_duration = end_time - start_time
@@ -367,6 +442,20 @@ class TaskExecutor:
                 # Record LLM failure
                 if hasattr(self.metrics, 'record_llm_result'):
                     self.metrics.record_llm_result(model, False, 0.3)
+                
+                # If we have a session_id, store the failure in short-term memory
+                if session_id:
+                    self.short_term_memory.update_context(
+                        session_id=session_id,
+                        task={
+                            "id": task_id,
+                            "description": task_description
+                        },
+                        feedback={
+                            "feedback_result": "failure",
+                            "error": str(e)
+                        }
+                    )
                 
                 # Re-raise to be handled by the outer try-except
                 raise

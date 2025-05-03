@@ -55,10 +55,94 @@ class ShortTermMemory:
 
         self.redis_client.hset(session_id, mapping={"context": json.dumps(current_context)})
         self.redis_client.expire(session_id, self.ttl)  # refresh TTL after each update
+        
+    def store_message(self, session_id: str, message: dict):
+        """
+        Store a conversation message in the session context.
+        
+        Args:
+            session_id: The session identifier
+            message: Dict containing sender, content, timestamp, etc.
+        """
+        current_context = self.get_context(session_id)
+        
+        # Check if we have a messages list already
+        has_messages = False
+        for item in current_context:
+            if item.get("type") == "messages":
+                item["data"].append(message)
+                has_messages = True
+                break
+        
+        # If no messages list exists, create one
+        if not has_messages:
+            current_context.append({
+                "type": "messages",
+                "data": [message]
+            })
+        
+        # Update Redis with the new context
+        self.redis_client.hset(session_id, mapping={"context": json.dumps(current_context)})
+        self.redis_client.expire(session_id, self.ttl)  # refresh TTL
+        
+    def get_conversation_messages(self, session_id: str) -> list:
+        """
+        Get all conversation messages from the session context.
+        
+        Args:
+            session_id: The session identifier
+            
+        Returns:
+            List of message dictionaries
+        """
+        current_context = self.get_context(session_id)
+        
+        # Find messages list
+        for item in current_context:
+            if item.get("type") == "messages":
+                return item.get("data", [])
+        
+        return []  # No messages found
+
+    def store_context_item(self, session_id: str, item_type: str, data: dict):
+        """
+        Store arbitrary context information by type.
+        
+        Args:
+            session_id: The session identifier
+            item_type: Type of context item (e.g., "kb_references", "plans", "definitions")
+            data: The context data to store
+        """
+        current_context = self.get_context(session_id)
+        
+        # Check if we have this type already
+        has_type = False
+        for item in current_context:
+            if item.get("type") == item_type:
+                # For lists, append; for dictionaries, update
+                if isinstance(item["data"], list) and isinstance(data, list):
+                    item["data"].extend(data)
+                elif isinstance(item["data"], dict) and isinstance(data, dict):
+                    item["data"].update(data)
+                else:
+                    # Replace data if types don't match
+                    item["data"] = data
+                has_type = True
+                break
+        
+        # If type doesn't exist, create it
+        if not has_type:
+            current_context.append({
+                "type": item_type,
+                "data": data
+            })
+        
+        # Update Redis with the new context
+        self.redis_client.hset(session_id, mapping={"context": json.dumps(current_context)})
+        self.redis_client.expire(session_id, self.ttl)  # refresh TTL
 
 # Singleton instance
 _short_term_memory: Optional[ShortTermMemory] = None
-
 
 def get_short_term_memory() -> ShortTermMemory:
     global _short_term_memory

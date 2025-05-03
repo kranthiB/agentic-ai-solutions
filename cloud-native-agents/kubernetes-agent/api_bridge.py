@@ -168,3 +168,86 @@ async def update_task_progress(
         status=status,
         result=result
     )
+
+async def update_session_state(conversation_id: str, state_update: Dict[str, Any]):
+    """
+    Update the session state for a conversation
+    
+    Args:
+        conversation_id: ID of the conversation
+        state_update: Dictionary of state updates to apply
+    """
+    if connection_manager:
+        await connection_manager.update_session_state(
+            conversation_id=conversation_id,
+            state_update=state_update
+        )
+        logger.info(f"Updated session state for conversation {conversation_id}")
+    else:
+        logger.debug(f"Session state update for {conversation_id} not sent - WebSockets not available")
+
+async def broadcast_progress_update(
+    conversation_id: str, 
+    progress_type: str, 
+    percentage: float,
+    current_step: int = None,
+    total_steps: int = None,
+    step_description: str = None
+):
+    """
+    Broadcast a progress update for long-running operations
+    
+    Args:
+        conversation_id: ID of the conversation
+        progress_type: Type of progress (plan, task, analysis)
+        percentage: Completion percentage (0-100)
+        current_step: Current step number (optional)
+        total_steps: Total number of steps (optional)
+        step_description: Description of current step (optional)
+    """
+    if connection_manager:
+        await connection_manager.broadcast_progress_update(
+            conversation_id=conversation_id,
+            progress_type=progress_type,
+            percentage=percentage,
+            current_step=current_step,
+            total_steps=total_steps,
+            step_description=step_description
+        )
+        logger.info(f"Sent progress update ({percentage}%) for conversation {conversation_id}")
+    else:
+        logger.debug(f"Progress update for {conversation_id} not sent - WebSockets not available")
+
+async def broadcast_conversation_summary_update(conversation_id: str, summary: str):
+    """
+    Broadcast an updated conversation summary
+    
+    Args:
+        conversation_id: ID of the conversation
+        summary: Current conversation summary
+    """
+    if connection_manager:
+        await connection_manager.broadcast_conversation_summary_update(
+            conversation_id=conversation_id,
+            summary=summary
+        )
+        logger.info(f"Sent conversation summary update for conversation {conversation_id}")
+    else:
+        logger.debug(f"Conversation summary update for {conversation_id} not sent - WebSockets not available")
+
+async def broadcast_conversation_context(conversation_id: str, context_items: List[Dict[str, Any]]):
+    """
+    Broadcast current conversation context items to clients
+    
+    Args:
+        conversation_id: ID of the conversation
+        context_items: List of context items with their metadata
+    """
+    if connection_manager:
+        await connection_manager.broadcast_conversation_context(
+            conversation_id=conversation_id,
+            context_items=context_items
+        )
+        logger.info(f"Sent conversation context update for conversation {conversation_id}")
+    else:
+        logger.debug(f"Conversation context update for {conversation_id} not sent - WebSockets not available")

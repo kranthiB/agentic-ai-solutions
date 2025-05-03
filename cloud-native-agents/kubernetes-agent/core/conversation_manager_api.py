@@ -7,7 +7,7 @@ This version adds WebSocket status updates for frontend integration.
 import datetime
 import time
 import traceback
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import uuid
 
 # Import original conversation manager
@@ -200,6 +200,28 @@ class ConversationManagerAPI:
             # Step 1: Create short-term session memory
             memory_start = time.time()
             session_id = self.short_term_memory.start_session()
+            
+            # Store the initial user goal in short-term memory
+            self.short_term_memory.store_message(
+                session_id=session_id,
+                message={
+                    "role": "user",
+                    "content": user_goal,
+                    "timestamp": datetime.datetime.now().isoformat()
+                }
+            )
+            
+            # Store additional context information
+            self.short_term_memory.store_context_item(
+                session_id=session_id,
+                item_type="conversation_metadata",
+                data={
+                    "conversation_id": conversation_id,
+                    "goal_category": goal_category,
+                    "session_start": datetime.datetime.now().isoformat()
+                }
+            )
+            
             memory_end = time.time()
             
             # Record session creation time with labels
@@ -210,6 +232,26 @@ class ConversationManagerAPI:
                 goal_category=goal_category
             )
             self.logger.info("Created memory session with ID: %s", session_id)
+
+            # Check for similar past conversations to inform planning
+            similar_conversations = []
+            try:
+                similar_conversations = await self.long_term_memory.retrieve_similar_conversations(
+                    goal=user_goal,
+                    limit=3
+                )
+                
+                if similar_conversations:
+                    self.logger.info(f"Found {len(similar_conversations)} similar past conversations for context")
+                    
+                    # Store similar conversations in short-term memory
+                    self.short_term_memory.store_context_item(
+                        session_id=session_id,
+                        item_type="similar_conversations",
+                        data=similar_conversations
+                    )
+            except Exception as e:
+                self.logger.warning(f"Error retrieving similar conversations: {str(e)}")
 
             # Step 2: Plan tasks based on goal with enhanced categorization
             planning_start = time.time()
@@ -229,9 +271,21 @@ class ConversationManagerAPI:
             plan["goal_category"] = goal_category
             plan["conversation_id"] = conversation_id
             plan["hour_of_day"] = hour_label
+            plan["session_id"] = session_id
 
             self.logger.info("Created plan with ID: %s containing %d tasks", 
                         plan.get("plan_id"), len(plan["tasks"]))
+            
+            # Store the plan in short-term memory
+            self.short_term_memory.store_context_item(
+                session_id=session_id,
+                item_type="plan",
+                data={
+                    "plan_id": plan["plan_id"],
+                    "tasks": plan["tasks"],
+                    "created_at": datetime.datetime.now().isoformat()
+                }
+            )
             
             # Record plan creation metrics
             self.metrics.record_tool_result(
@@ -247,6 +301,19 @@ class ConversationManagerAPI:
                         conversation_id=conversation_id,
                         plan_id=plan["plan_id"],
                         tasks=plan["tasks"]
+                    )
+                    
+                    # Update session state with plan details
+                    await api_bridge.update_session_state(
+                        conversation_id=conversation_id,
+                        state_update={
+                            "goal": user_goal,
+                            "goal_category": goal_category,
+                            "plan_id": plan["plan_id"],
+                            "task_count": len(plan["tasks"]),
+                            "current_task_index": 0,
+                            "status": "planning_complete"
+                        }
                     )
                 except Exception as e:
                     self.logger.error(f"Error sending plan update: {str(e)}")
@@ -299,11 +366,27 @@ class ConversationManagerAPI:
                             status="in_progress",
                             progress_percentage=50.0
                         )
+                        
+                        # Send progress update
+                        progress_percentage = ((idx - 1 + 0.5) / len(plan["tasks"])) * 100
+                        await api_bridge.broadcast_progress_update(
+                            conversation_id=conversation_id,
+                            progress_type="conversation",
+                            percentage=progress_percentage,
+                            current_step=idx,
+                            total_steps=len(plan["tasks"]),
+                            step_description=f"Executing task: {task_description}"
+                        )
                     except Exception as e:
                         self.logger.error(f"Error sending task in-progress update: {str(e)}")
                 
                 # Track task execution time
                 task_start = time.time()
+                
+                # Add session_id to task context
+                if "context" not in task:
+                    task["context"] = {}
+                task["context"]["session_id"] = session_id
         
                 # Execute the task using agent and tool mapping - no special cases
                 try:
@@ -378,6 +461,17 @@ class ConversationManagerAPI:
                                 status="completed",
                                 progress_percentage=100.0,
                                 result={"response": result}
+                            )
+                            
+                            # Send conversation progress update
+                            progress_percentage = (idx / len(plan["tasks"])) * 100
+                            await api_bridge.broadcast_progress_update(
+                                conversation_id=conversation_id,
+                                progress_type="conversation",
+                                percentage=progress_percentage,
+                                current_step=idx,
+                                total_steps=len(plan["tasks"]),
+                                step_description=f"Completed task: {task_description}"
                             )
                         except Exception as e:
                             self.logger.error(f"Error sending task completion update: {str(e)}")
@@ -454,6 +548,13 @@ class ConversationManagerAPI:
                 executor_agent=self.executor_agent,
                 goal_category=goal_category
             )
+            
+            # Store reflection insights in short-term memory
+            self.short_term_memory.store_context_item(
+                session_id=session_id,
+                item_type="reflection_insights",
+                data=reflection_summary["insights"]
+            )
 
             # Optional: print insight summary
             self.logger.info("\n🧠 Agent Self-Reflection Summary:")
@@ -469,7 +570,8 @@ class ConversationManagerAPI:
                 "goal_category": goal_category,
                 "tasks": task_results,
                 "hour_of_day": hour_label,
-                "success_rate": sum(1 for t in task_results if t["status"]) / len(task_results) if task_results else 0
+                "success_rate": sum(1 for t in task_results if t["status"]) / len(task_results) if task_results else 0,
+                "reflection_insights": reflection_summary.get("insights", [])
             }
             
             # Store in long-term memory with performance tracking
@@ -539,6 +641,17 @@ class ConversationManagerAPI:
             if WEBSOCKET_ENABLED:
                 try:
                     await api_bridge.send_thinking_status(conversation_id, False)
+                    
+                    # Update final session state
+                    await api_bridge.update_session_state(
+                        conversation_id=conversation_id,
+                        state_update={
+                            "status": "completed",
+                            "completed_at": datetime.datetime.now().isoformat(),
+                            "duration_seconds": round(total_duration, 2),
+                            "success_rate": round(sum(1 for t in task_results if t["status"]) / len(task_results), 2) if task_results else 0
+                        }
+                    )
                 except Exception as e:
                     self.logger.error(f"Error sending thinking status update: {str(e)}")
             
@@ -553,6 +666,16 @@ class ConversationManagerAPI:
             
             # Generate the combined results
             result_text = self.combine_task_results(full_response["tasks"])
+            
+            # Store the assistant's response in short-term memory
+            self.short_term_memory.store_message(
+                session_id=session_id,
+                message={
+                    "role": "assistant",
+                    "content": result_text,
+                    "timestamp": datetime.datetime.now().isoformat()
+                }
+            )
             
             # Validate final output through guardrails before returning
             is_valid, reason, filtered_output = await self.guardrail_service.validate_llm_output(
@@ -594,6 +717,17 @@ class ConversationManagerAPI:
                         error_code=error_type
                     )
                     await api_bridge.send_thinking_status(conversation_id, False)
+                    
+                    # Update session state with error
+                    await api_bridge.update_session_state(
+                        conversation_id=conversation_id,
+                        state_update={
+                            "status": "error",
+                            "error": str(e),
+                            "error_type": error_type,
+                            "error_time": datetime.datetime.now().isoformat()
+                        }
+                    )
                 except Exception as ws_error:
                     self.logger.error(f"Error sending error update via WebSocket: {str(ws_error)}")
             
@@ -659,6 +793,16 @@ class ConversationManagerAPI:
         if WEBSOCKET_ENABLED:
             try:
                 await api_bridge.send_thinking_status(conversation_id, True)
+                
+                # Update session state
+                await api_bridge.update_session_state(
+                    conversation_id=conversation_id,
+                    state_update={
+                        "status": "processing_followup",
+                        "followup_query": query,
+                        "followup_start": datetime.datetime.now().isoformat()
+                    }
+                )
             except Exception as e:
                 self.logger.error(f"Error sending thinking status: {str(e)}")
         
@@ -679,13 +823,73 @@ class ConversationManagerAPI:
             session_context = []
             if session_id:
                 session_context = self.short_term_memory.get_context(session_id)
+                
+                # Store the follow-up question in short-term memory
+                self.short_term_memory.store_message(
+                    session_id=session_id,
+                    message={
+                        "role": "user",
+                        "content": query,
+                        "timestamp": datetime.datetime.now().isoformat(),
+                        "type": "followup"
+                    }
+                )
+            else:
+                self.logger.warning(f"No session ID found for conversation {conversation_id}")
+                # Create a new session if needed
+                session_id = self.short_term_memory.start_session()
+                self.logger.info(f"Created new session {session_id} for followup on conversation {conversation_id}")
+                
+                # Store conversation metadata and follow-up question
+                self.short_term_memory.store_context_item(
+                    session_id=session_id,
+                    item_type="conversation_metadata",
+                    data={
+                        "conversation_id": conversation_id,
+                        "goal_category": conversation.get("goal_category", "general"),
+                        "session_start": datetime.datetime.now().isoformat(),
+                        "is_followup_session": True
+                    }
+                )
+                
+                self.short_term_memory.store_message(
+                    session_id=session_id,
+                    message={
+                        "role": "user",
+                        "content": query,
+                        "timestamp": datetime.datetime.now().isoformat(),
+                        "type": "followup"
+                    }
+                )
+            
+            # Look for similar past conversations
+            similar_conversations = []
+            try:
+                similar_conversations = await self.long_term_memory.retrieve_similar_conversations(
+                    goal=query,
+                    limit=2
+                )
+                if similar_conversations:
+                    self.logger.info(f"Found {len(similar_conversations)} similar conversations for followup context")
+                    
+                    # Store in short-term memory
+                    if session_id:
+                        self.short_term_memory.store_context_item(
+                            session_id=session_id,
+                            item_type="similar_conversations",
+                            data=similar_conversations
+                        )
+            except Exception as e:
+                self.logger.warning(f"Error retrieving similar conversations for followup: {str(e)}")
             
             # Build context from conversation history
             context = {
                 "goal": conversation.get("goal", ""),
                 "goal_category": conversation.get("goal_category", "general"),
                 "history": messages,
-                "session_context": session_context
+                "session_context": session_context,
+                "similar_conversations": similar_conversations,
+                "session_id": session_id
             }
             
             # Log context retrieval
@@ -741,6 +945,16 @@ class ConversationManagerAPI:
                         progress_percentage=100.0,
                         result={"response": result}
                     )
+                    
+                    # Update session state
+                    await api_bridge.update_session_state(
+                        conversation_id=conversation_id,
+                        state_update={
+                            "status": "followup_completed",
+                            "followup_completion_time": datetime.datetime.now().isoformat(),
+                            "followup_duration": task_duration
+                        }
+                    )
                 except Exception as e:
                     self.logger.error(f"Error sending task completion update: {str(e)}")
             
@@ -756,6 +970,18 @@ class ConversationManagerAPI:
                 result_text = result["result"]
             else:
                 result_text = str(result)
+            
+            # Store the response in short-term memory
+            if session_id:
+                self.short_term_memory.store_message(
+                    session_id=session_id,
+                    message={
+                        "role": "assistant",
+                        "content": result_text,
+                        "timestamp": datetime.datetime.now().isoformat(),
+                        "type": "followup_response"
+                    }
+                )
                 
             # Validate final output through guardrails before returning
             is_valid, reason, filtered_output = await self.guardrail_service.validate_llm_output(
@@ -783,6 +1009,17 @@ class ConversationManagerAPI:
                         error_code=type(e).__name__
                     )
                     await api_bridge.send_thinking_status(conversation_id, False)
+                    
+                    # Update session state with error
+                    await api_bridge.update_session_state(
+                        conversation_id=conversation_id,
+                        state_update={
+                            "status": "followup_error",
+                            "error": str(e),
+                            "error_type": type(e).__name__,
+                            "error_time": datetime.datetime.now().isoformat()
+                        }
+                    )
                 except Exception as ws_error:
                     self.logger.error(f"Error sending error update via WebSocket: {str(ws_error)}")
             
