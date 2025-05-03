@@ -16,6 +16,8 @@ from api.models.conversation import (
 # Import services
 from services.conversation.conversation_service import get_conversation_service
 from api.websockets.connection_manager import get_connection_manager
+# Add guardrail service import
+from services.guardrail.guardrail_service import get_guardrail_service
 
 from monitoring.agent_logger import get_logger
 logger = get_logger(__name__)
@@ -26,6 +28,8 @@ router = APIRouter()
 # Initialize services
 conversation_service = get_conversation_service()
 connection_manager = get_connection_manager()
+# Initialize guardrail service
+guardrail_service = get_guardrail_service()
 
 @router.post("/", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)
 async def create_conversation(
@@ -40,7 +44,27 @@ async def create_conversation(
     
     # For now, use a fixed user ID until auth is implemented
     fixed_user_id = "temp-user-id"
-    
+
+    # Validate user input through guardrails
+    is_valid, reason = await guardrail_service.validate_user_input(
+        user_input=conversation.goal,
+        user_id=fixed_user_id,
+        conversation_id=conversation_id
+    )
+
+    # Check if input was blocked by guardrails
+    if not is_valid:
+        # Get enforcement level from config
+        config = guardrail_service.config
+        if config.get("enforcement_level") == "block":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Input validation failed: {reason}"
+            )
+        else:
+            # Log the warning but allow to proceed
+            logger.warning(f"Guardrail warning (non-blocking): {reason}")
+
     # Store initial conversation metadata
     new_conversation = await conversation_service.create_conversation(
         conversation_id=conversation_id,
@@ -144,6 +168,26 @@ async def add_message(
             detail="Conversation not found"
         )
     
+    # Validate user input through guardrails
+    is_valid, reason = await guardrail_service.validate_user_input(
+        user_input=message.content,
+        user_id=fixed_user_id,
+        conversation_id=conversation_id
+    )
+    
+    # Check if input was blocked by guardrails
+    if not is_valid:
+        # Get enforcement level from config
+        config = guardrail_service.config
+        if config.get("enforcement_level") == "block":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Input validation failed: {reason}"
+            )
+        else:
+            # Log the warning but allow to proceed
+            logger.warning(f"Guardrail warning (non-blocking): {reason}")
+
     # Create message
     message_id = str(uuid.uuid4())
     created_message = await conversation_service.add_message(
@@ -283,12 +327,21 @@ async def process_conversation(conversation_id: str, goal: str, goal_category: s
         # Run conversation (this will take time)
         result = await manager.run_conversation(goal, goal_category, conversation_id)
         
+        # Validate agent output through guardrails
+        is_valid, reason, filtered_output = await guardrail_service.validate_llm_output(
+            output=result,
+            context={"conversation_id": conversation_id, "goal_category": goal_category}
+        )
+        
+        # Use filtered output if available
+        final_output = filtered_output if not is_valid else result
+
         # Add agent response as a message
         message_id = str(uuid.uuid4())
         await conversation_service.add_message(
             conversation_id=conversation_id,
             message_id=message_id,
-            content=result,
+            content=final_output,
             sender="agent"
         )
         
@@ -352,12 +405,21 @@ async def process_message(conversation_id: str, message_id: str, content: str):
             logger.warning(f"Received message for conversation in status: {conversation.get('status')}")
             result = "I'm still working on your previous request. Please wait until it's completed."
         
+        # Validate agent output through guardrails
+        is_valid, reason, filtered_output = await guardrail_service.validate_llm_output(
+            output=result,
+            context={"conversation_id": conversation_id, "message_id": message_id}
+        )
+        
+        # Use filtered output if available
+        final_output = filtered_output if not is_valid else result
+
         # Add agent response as a message
         response_id = str(uuid.uuid4())
         await conversation_service.add_message(
             conversation_id=conversation_id,
             message_id=response_id,
-            content=result,
+            content=final_output,
             sender="agent"
         )
         

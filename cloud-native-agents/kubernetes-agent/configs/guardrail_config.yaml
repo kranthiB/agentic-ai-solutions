@@ -1,0 +1,211 @@
+# configs/guardrail_config.yaml
+# Guardrail configuration for Kubernetes AI Agent
+
+guardrails:
+  # Global guardrail settings
+  enabled: true
+  enforcement_level: warning  # passive, warning, block
+
+  # Input validation settings
+  input_validation:
+    enabled: true
+    check_prohibited: true
+    check_content_policy: true
+    check_security: true
+    prohibited_patterns:
+      security:
+        - "(?i)(?:sudo|su)\\s+.*"
+        - "(?:rm|chmod|chown|dd|mkfs)\\s+.*-[rf].*"
+        - "(?:\\|\\s*(?:bash|sh|zsh|csh)|`.*`)"
+      content_policy:
+        - "(?i)(?:fuck|shit|dick|asshole|bitch)"
+      kubernetes_sensitive:
+        - "(?i)(?:kubeconfig|\\.kube/config)"
+        - "(?i)(?:--token\\s+\\S+|bearer\\s+token)"
+        - "(?i)secret(?:\\s+create|\\s+edit|\\s+expose)"
+
+  # Action validation settings
+  action_validation:
+    enabled: true
+    role_permissions:
+      viewer:
+        global_operations:
+          - get
+          - list
+          - describe
+          - watch
+        resources:
+          pods:
+            - get
+            - list
+            - describe
+            - watch
+      editor:
+        global_operations:
+          - get
+          - list
+          - describe
+          - watch
+          - create
+          - update
+          - patch
+          - apply
+        resources:
+          pods:
+            - get
+            - list
+            - describe
+            - watch
+            - create
+            - update
+            - patch
+            - apply
+            - delete
+          deployments:
+            - get
+            - list
+            - describe
+            - watch
+            - create
+            - update
+            - patch
+            - apply
+            - delete
+            - scale
+      admin:
+        global_operations:
+          - get
+          - list
+          - describe
+          - watch
+          - create
+          - update
+          - patch
+          - apply
+          - delete
+          - exec
+        resources:
+          nodes:
+            - get
+            - list
+            - describe
+            - watch
+            - cordon
+            - uncordon
+            - drain
+            - taint
+          
+    protected_resources:
+      namespaces:
+        - kube-system
+        - kube-public
+        - kube-node-lease
+        - monitoring
+        - ingress-nginx
+        - cert-manager
+      resource_types:
+        - nodes
+        - serviceaccounts
+        - secrets
+        - persistentvolumes
+        - customresourcedefinitions
+        - clusterroles
+        - clusterrolebindings
+        
+    critical_resource_patterns:
+      - "(?i)^kube-"
+      - "(?i).*-system$"
+      - "(?i)^ingress-"
+      - "(?i)^cert-"
+      - "(?i)^prometheus-"
+      
+    high_risk_operations:
+      delete:
+        - nodes
+        - namespaces
+        - persistentvolumes
+        - clusterroles
+        - customresourcedefinitions
+      patch:
+        - nodes
+        - customresourcedefinitions
+        - apiservices
+      exec:
+        - pods
+      drain:
+        - nodes
+      cordon:
+        - nodes
+      taint:
+        - nodes
+
+  # Output validation settings
+  output_validation:
+    enabled: true
+    filter_patterns:
+      harmful_instructions:
+        pattern: "(?i)(?:how\\s+to|steps\\s+for|instructions\\s+for)\\s+(?:hack|exploit|attack|compromise)"
+        replacement: "[harmful content removed]"
+      offensive_content:
+        pattern: "(?i)(?:racial\\s+slurs?|offensive\\s+language|derogatory\\s+terms?)"
+        replacement: "[inappropriate content removed]"
+      credentials:
+        pattern: "(?i)(?:password|secret|token|apikey)(?:\\s+is|\\:)\\s*[^\\s]+"
+        replacement: "[credentials removed]"
+
+  # Critical namespaces requiring special handling
+  critical_namespaces:
+    - kube-system
+    - monitoring
+    - ingress-nginx
+    - cert-manager
+
+  # Risk profiles for different operations and resource types
+  risk_profiles:
+    delete:
+      pods: medium
+      deployments: medium
+      services: medium
+      configmaps: medium
+      secrets: high
+      nodes: high
+      namespaces: high
+      persistentvolumes: high
+      clusterroles: high
+      customresourcedefinitions: high
+    patch:
+      pods: low
+      deployments: medium
+      services: medium
+      configmaps: medium
+      secrets: high
+      nodes: high
+      customresourcedefinitions: high
+      apiservices: high
+    exec:
+      pods: medium
+    drain:
+      nodes: high
+    cordon:
+      nodes: medium
+    taint:
+      nodes: high
+    scale:
+      deployments: medium
+      statefulsets: medium
+
+  # Mitigation strategies by operation
+  mitigation_strategies:
+    delete:
+      - "Consider backing up the resource before deletion"
+      - "Check for dependent resources that might be affected"
+      - "Verify the resource name carefully"
+    scale:
+      - "Consider the impact on application availability"
+      - "Monitor resource usage during scaling"
+    drain:
+      - "Ensure enough capacity exists on other nodes"
+      - "Check for pods with local storage"
+    exec:
+      - "Avoid running destructive commands"
+      - "Use read-only commands when possible"

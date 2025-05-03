@@ -14,6 +14,9 @@ from monitoring.cost_tracker import get_cost_tracker
 from monitoring.metrics_collector import get_metrics_collector
 from monitoring.event_audit_log import get_audit_logger
 
+# Import guardrail service
+from services.guardrail.guardrail_service import get_guardrail_service
+
 class TaskExecutor:
     """Handles execution of individual planned tasks using agent + tools."""
 
@@ -30,6 +33,9 @@ class TaskExecutor:
         self.cost_tracker = get_cost_tracker()
         self.metrics = get_metrics_collector()
         self.audit = get_audit_logger()
+
+        # Initialize guardrail service
+        self.guardrail_service = get_guardrail_service()
         
         # Record initialization
         self.metrics.record_tool_call("task_executor_initialized")
@@ -104,6 +110,36 @@ class TaskExecutor:
             # Create user prompt with task context
             user_prompt = f"User Goal: {task_description}\nSuggest safest available tool and parameters to achieve this."
             
+            # Validate task description through guardrails
+            is_valid, reason = await self.guardrail_service.validate_user_input(
+                user_input=task_description,
+                user_id="system",
+                conversation_id=conversation_id,
+                metadata={"task_id": task_id, "plan_id": plan_id}
+            )
+            
+            # Check if task was blocked by guardrails
+            if not is_valid:
+                # Check enforcement level
+                config = self.guardrail_service.config
+                if config.get("enforcement_level") == "block":
+                    self.logger.warning(f"Task blocked by guardrails: {reason}")
+                    self.audit.log_event("guardrail_blocked_task", {
+                        "task_id": task_id,
+                        "reason": reason,
+                        "conversation_id": conversation_id
+                    })
+                    return {
+                        "task_id": task_id,
+                        "description": task_description,
+                        "success": False,
+                        "error": f"Task was blocked by safety guardrails: {reason}",
+                        "goal_category": goal_category
+                    }
+                else:
+                    # Log warning but continue with execution
+                    self.logger.warning(f"Guardrail warning for task (non-blocking): {reason}")
+
             # Log the interaction with the agent
             self.logger.debug("Sending prompt to agent: %s", user_prompt)
             
@@ -173,6 +209,52 @@ class TaskExecutor:
                     }
                     
                 agent_task_response = messages[-1]["content"]
+
+                # Parse agent response to extract potential action and parameters
+                action, parameters = self._parse_agent_response(agent_task_response)
+                
+                # Validate action through guardrails if we could extract it
+                if action and parameters:
+                    # Default role is "editor" for task executor
+                    user_role = "editor"
+                    namespace = parameters.get("namespace", "default")
+                    
+                    is_valid, reason = await self.guardrail_service.validate_action(
+                        action=action,
+                        parameters=parameters,
+                        user_id="system",
+                        user_role=user_role,
+                        namespace=namespace
+                    )
+                    
+                    # Check if action was blocked by guardrails
+                    if not is_valid:
+                        # Check enforcement level
+                        config = self.guardrail_service.config
+                        if config.get("enforcement_level") == "block":
+                            self.logger.warning(f"Action blocked by guardrails: {reason}")
+                            self.audit.log_event("guardrail_blocked_action", {
+                                "task_id": task_id,
+                                "action": action,
+                                "parameters": parameters,
+                                "reason": reason,
+                                "conversation_id": conversation_id
+                            })
+                            
+                            # Add warning to agent response
+                            agent_task_response = f"⚠️ Action blocked by safety guardrails: {reason}\n\nOriginal response:\n{agent_task_response}"
+                
+                # Validate agent output through guardrails
+                is_valid, reason, filtered_output = await self.guardrail_service.validate_llm_output(
+                    output=agent_task_response,
+                    context={"task_id": task_id, "conversation_id": conversation_id}
+                )
+                
+                # Use filtered output if censoring was applied
+                if not is_valid:
+                    self.logger.info(f"Agent output modified by guardrails: {reason}")
+                    agent_task_response = filtered_output
+
                 response_length = len(agent_task_response)
                 self.logger.debug("Agent response: %s", agent_task_response)
                 
@@ -315,6 +397,47 @@ class TaskExecutor:
                 "error_type": error_type,
                 "goal_category": goal_category
             }
+        
+    def _parse_agent_response(self, agent_response: str) -> tuple:
+        """
+        Parse agent response to extract tool name and parameters
+        
+        Args:
+            agent_response: The agent's response text
+            
+        Returns:
+            tuple: (tool_name, parameters) or (None, None) if parsing fails
+        """
+        try:
+            # Look for common patterns of tool usage in agent responses
+            import re
+            
+            # Try to find function call patterns
+            function_pattern = r'(?:I would use|I recommend using|We should use|Let\'s use|Using)\s+the\s+`?([a-z_]+)`?\s+(?:tool|function)'
+            match = re.search(function_pattern, agent_response, re.IGNORECASE)
+            
+            if match:
+                tool_name = match.group(1)
+                
+                # Now try to extract parameters - this is more complex and depends on the tool
+                params = {}
+                
+                # Look for key-value parameters in the form of key=value or key: value
+                param_pattern = r'(?:--|\b)([a-z_]+)(?:\s*[=:]\s*|\s+)(?:"([^"]+)"|\'([^\']+)\'|(\S+))'
+                param_matches = re.finditer(param_pattern, agent_response, re.IGNORECASE)
+                
+                for param_match in param_matches:
+                    key = param_match.group(1)
+                    # Value could be in any of the capture groups
+                    value = param_match.group(2) or param_match.group(3) or param_match.group(4)
+                    params[key] = value
+                
+                return tool_name, params
+            
+            return None, None
+        except Exception as e:
+            self.logger.warning(f"Error parsing agent response for tool extraction: {str(e)}")
+            return None, None
         
 # Singleton instance
 _task_executor: Optional[TaskExecutor] = None

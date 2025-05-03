@@ -11,6 +11,8 @@ from monitoring.agent_logger import get_logger
 from monitoring.metrics_collector import get_metrics_collector
 from monitoring.event_audit_log import get_audit_logger
 
+# Import guardrail service
+from services.guardrail.guardrail_service import get_guardrail_service
 
 class Planner:
     """Planner that takes a user goal, decomposes it into tasks, and generates a structured plan."""
@@ -27,6 +29,9 @@ class Planner:
         self.logger = get_logger(__name__)
         self.metrics = get_metrics_collector()
         self.audit = get_audit_logger()
+
+        # Initialize guardrail service
+        self.guardrail_service = get_guardrail_service()
 
         self.logger.info(
             "Planner initialized with priority gap: %s", self.default_priority_gap
@@ -53,8 +58,91 @@ class Planner:
             },
         )
 
+        # Validate user goal through guardrails
+        is_valid, reason = await self.guardrail_service.validate_user_input(
+            user_input=user_goal,
+            user_id="system",
+            conversation_id=plan_id,
+            metadata={"operation": "plan_creation", "goal_category": goal_category}
+        )
+        
+        # Check if goal was blocked by guardrails
+        if not is_valid:
+            # Check enforcement level
+            config = self.guardrail_service.config
+            if config.get("enforcement_level") == "block":
+                self.logger.warning(f"Goal creation blocked by guardrails: {reason}")
+                self.audit.log_event("guardrail_blocked_goal", {
+                    "plan_id": plan_id,
+                    "goal": user_goal,
+                    "reason": reason,
+                    "goal_category": goal_category
+                })
+                
+                # Return a minimal plan with an error message
+                error_plan = {
+                    "plan_id": plan_id,
+                    "user_goal": user_goal,
+                    "tasks": [{
+                        "id": str(uuid.uuid4()),
+                        "description": f"⚠️ This plan was blocked by safety guardrails: {reason}",
+                        "priority": 1,
+                        "status": "BLOCKED",
+                        "error": reason
+                    }],
+                    "goal_category": goal_category,
+                    "creation_time": time.time(),
+                    "hour_of_day": hour_label,
+                    "task_count": 1,
+                    "status": "blocked_by_guardrails"
+                }
+                return error_plan
+            else:
+                # Log warning but continue with plan creation
+                self.logger.warning(f"Guardrail warning for goal (non-blocking): {reason}")
+
         try:
             tasks = await self.decomposer.decompose(plan_id, user_goal, goal_category)
+
+            # Validate each task through guardrails
+            valid_tasks = []
+            for task in tasks:
+                task_description = task.get("description", "")
+                
+                # Validate task through guardrails
+                is_valid, reason = await self.guardrail_service.validate_user_input(
+                    user_input=task_description,
+                    user_id="system",
+                    conversation_id=plan_id,
+                    metadata={"task_id": task.get("id"), "operation": "task_creation"}
+                )
+                
+                # Check if task was blocked by guardrails
+                if not is_valid:
+                    # Check enforcement level
+                    config = self.guardrail_service.config
+                    if config.get("enforcement_level") == "block":
+                        self.logger.warning(f"Task creation blocked by guardrails: {reason}")
+                        self.audit.log_event("guardrail_blocked_task", {
+                            "plan_id": plan_id,
+                            "task_id": task.get("id"),
+                            "task": task_description,
+                            "reason": reason
+                        })
+                        
+                        # Replace task with a warning task
+                        task["description"] = f"⚠️ Task blocked by safety guardrails: {reason}"
+                        task["status"] = "BLOCKED"
+                        task["error"] = reason
+                    else:
+                        # Log warning but keep task
+                        self.logger.warning(f"Guardrail warning for task (non-blocking): {reason}")
+                
+                # Add task to list (potentially modified)
+                valid_tasks.append(task)
+            
+            # Use filtered tasks list
+            tasks = valid_tasks
 
             for idx, task in enumerate(tasks):
                 priority = task.get("priority", (idx + 1) * self.default_priority_gap)

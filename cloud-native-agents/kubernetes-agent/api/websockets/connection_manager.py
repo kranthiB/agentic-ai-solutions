@@ -137,6 +137,132 @@ class ConnectionManager:
                 }
             )
         )
+        
+    # NEW: Guardrail-specific WebSocket broadcasts
+    async def broadcast_guardrail_warning(self, 
+                                        conversation_id: str, 
+                                        warning_type: str, 
+                                        message: str, 
+                                        details: Dict[str, Any] = None):
+        """
+        Broadcast a guardrail warning message
+        
+        Args:
+            conversation_id: ID of the conversation
+            warning_type: Type of warning (input, action, output)
+            message: Warning message text
+            details: Additional warning details
+        """
+        await self.broadcast(
+            WebSocketMessage(
+                type="guardrail_warning",
+                conversation_id=conversation_id,
+                content={
+                    "warning_type": warning_type,
+                    "message": message,
+                    "details": details or {}
+                }
+            )
+        )
+        
+    async def broadcast_guardrail_block(self, 
+                                      conversation_id: str, 
+                                      block_type: str, 
+                                      reason: str, 
+                                      details: Dict[str, Any] = None):
+        """
+        Broadcast a guardrail block notification
+        
+        Args:
+            conversation_id: ID of the conversation
+            block_type: Type of block (input, action, output)
+            reason: Reason for the block
+            details: Additional block details
+        """
+        await self.broadcast(
+            WebSocketMessage(
+                type="guardrail_block",
+                conversation_id=conversation_id,
+                content={
+                    "block_type": block_type,
+                    "reason": reason,
+                    "details": details or {}
+                }
+            )
+        )
+        
+    async def broadcast_risk_assessment(self, 
+                                      conversation_id: str, 
+                                      operation: str, 
+                                      resource_type: str, 
+                                      namespace: str,
+                                      risk_level: str,
+                                      requires_approval: bool = False,
+                                      mitigation_steps: List[str] = None):
+        """
+        Broadcast a risk assessment notification
+        
+        Args:
+            conversation_id: ID of the conversation
+            operation: Operation being assessed (e.g., delete, scale)
+            resource_type: Resource type (e.g., pod, deployment)
+            namespace: Kubernetes namespace
+            risk_level: Assessed risk level (low, medium, high)
+            requires_approval: Whether explicit approval is required
+            mitigation_steps: Recommended mitigation steps
+        """
+        await self.broadcast(
+            WebSocketMessage(
+                type="risk_assessment",
+                conversation_id=conversation_id,
+                content={
+                    "operation": operation,
+                    "resource_type": resource_type,
+                    "namespace": namespace,
+                    "risk_level": risk_level,
+                    "requires_approval": requires_approval,
+                    "mitigation_steps": mitigation_steps or []
+                }
+            )
+        )
+        
+    async def broadcast_approval_request(self, 
+                                       conversation_id: str, 
+                                       operation: str, 
+                                       resource_type: str,
+                                       resource_name: str,
+                                       namespace: str,
+                                       risk_level: str,
+                                       request_id: str,
+                                       explanation: str = None):
+        """
+        Broadcast an approval request for a high-risk operation
+        
+        Args:
+            conversation_id: ID of the conversation
+            operation: Operation requiring approval (e.g., delete)
+            resource_type: Resource type (e.g., node)
+            resource_name: Name of the specific resource
+            namespace: Kubernetes namespace
+            risk_level: Risk level (typically "high")
+            request_id: Unique ID for the approval request
+            explanation: Optional explanation of risks
+        """
+        await self.broadcast(
+            WebSocketMessage(
+                type="approval_request",
+                conversation_id=conversation_id,
+                content={
+                    "request_id": request_id,
+                    "operation": operation,
+                    "resource_type": resource_type,
+                    "resource_name": resource_name,
+                    "namespace": namespace,
+                    "risk_level": risk_level,
+                    "explanation": explanation or f"High-risk operation '{operation}' on {resource_type}/{resource_name} requires approval"
+                }
+            )
+        )
 
 # Singleton instance
 _connection_manager: Optional[ConnectionManager] = None

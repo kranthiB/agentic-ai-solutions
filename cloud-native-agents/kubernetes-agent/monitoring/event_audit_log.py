@@ -23,6 +23,7 @@ Stored at: logs/audit/<session_id>.jsonl
 import json
 import os
 from datetime import datetime
+import re
 from typing import Dict, Any, Optional
 from monitoring.metrics_collector import get_metrics_collector
 
@@ -164,6 +165,244 @@ class EventAuditLog:
             # Check if it's a timeout (latency > 30s is typically a timeout)
             if latency > 30:
                 self.metrics.record_llm_timeout(model)
+
+    # NEW: Guardrail-specific audit events
+    def log_guardrail_validation(self, 
+                               validation_type: str, 
+                               input_content: str, 
+                               is_valid: bool, 
+                               reason: Optional[str] = None,
+                               user_id: str = "system",
+                               conversation_id: Optional[str] = None,
+                               metadata: Optional[Dict[str, Any]] = None):
+        """
+        Log a guardrail validation event
+        
+        Args:
+            validation_type: Type of validation (input, action, output)
+            input_content: Content that was validated (truncated for privacy)
+            is_valid: Whether validation passed
+            reason: Reason for failure if not valid
+            user_id: ID of the user or component that triggered validation
+            conversation_id: Optional conversation context
+            metadata: Additional context information
+        """
+        # Truncate and sanitize input for privacy
+        truncated_input = self._sanitize_content(input_content)
+        
+        audit_metadata = {
+            "validation_type": validation_type,
+            "is_valid": is_valid,
+            "user_id": user_id,
+            "timestamp": datetime.now().isoformat(),
+            "conversation_id": conversation_id
+        }
+        
+        # Only include reason if validation failed
+        if not is_valid and reason:
+            audit_metadata["reason"] = reason
+            
+        # Add truncated input preview
+        audit_metadata["content_preview"] = truncated_input
+        
+        # Add any additional metadata
+        if metadata:
+            audit_metadata.update(metadata)
+        
+        # Log the event
+        self.log_event(f"guardrail_{validation_type}_validation", audit_metadata)
+        
+        # Record in metrics
+        self.metrics.record_tool_result(
+            f"guardrail_{validation_type}_validation", 
+            is_valid
+        )
+        
+        # Record validation count
+        if is_valid:
+            self.metrics.metrics[f"guardrail_{validation_type}_passed"] = \
+                self.metrics.metrics.get(f"guardrail_{validation_type}_passed", 0) + 1
+        else:
+            self.metrics.metrics[f"guardrail_{validation_type}_blocked"] = \
+                self.metrics.metrics.get(f"guardrail_{validation_type}_blocked", 0) + 1
+
+    def log_guardrail_block(self, 
+                          block_type: str, 
+                          reason: str,
+                          content_preview: str,
+                          user_id: str = "system",
+                          conversation_id: Optional[str] = None,
+                          action: Optional[str] = None,
+                          resource_type: Optional[str] = None,
+                          namespace: Optional[str] = None):
+        """
+        Log a guardrail block event when content is blocked
+        
+        Args:
+            block_type: Type of block (input, action, output)
+            reason: Reason for the block
+            content_preview: Sanitized preview of blocked content
+            user_id: User identifier
+            conversation_id: Optional conversation context
+            action: Optional action name (for action blocks)
+            resource_type: Optional resource type (for action blocks)
+            namespace: Optional namespace (for action blocks)
+        """
+        metadata = {
+            "block_type": block_type,
+            "reason": reason,
+            "content_preview": content_preview,
+            "user_id": user_id,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Add conversation ID if available
+        if conversation_id:
+            metadata["conversation_id"] = conversation_id
+            
+        # Add action details if available
+        if action:
+            metadata["action"] = action
+        if resource_type:
+            metadata["resource_type"] = resource_type
+        if namespace:
+            metadata["namespace"] = namespace
+            
+        # Log the event
+        self.log_event("guardrail_block", metadata)
+        
+        # Record block in metrics
+        self.metrics.metrics[f"guardrail_block_{block_type}"] = \
+            self.metrics.metrics.get(f"guardrail_block_{block_type}", 0) + 1
+            
+        # Categorize by reason
+        reason_key = f"guardrail_block_reason_{reason.replace(' ', '_')}"
+        self.metrics.metrics[reason_key] = self.metrics.metrics.get(reason_key, 0) + 1
+
+    def log_guardrail_risk_assessment(self,
+                                    operation: str,
+                                    resource_type: str,
+                                    namespace: str,
+                                    risk_level: str,
+                                    requires_approval: bool,
+                                    conversation_id: Optional[str] = None,
+                                    user_id: str = "system"):
+        """
+        Log a risk assessment for an operation
+        
+        Args:
+            operation: Operation being assessed (e.g., delete, scale)
+            resource_type: Resource type (e.g., pod, deployment)
+            namespace: Kubernetes namespace
+            risk_level: Assessed risk level (low, medium, high)
+            requires_approval: Whether explicit approval is required
+            conversation_id: Optional conversation context
+            user_id: User identifier
+        """
+        metadata = {
+            "operation": operation,
+            "resource_type": resource_type,
+            "namespace": namespace,
+            "risk_level": risk_level,
+            "requires_approval": requires_approval,
+            "user_id": user_id,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Add conversation ID if available
+        if conversation_id:
+            metadata["conversation_id"] = conversation_id
+            
+        # Log the event
+        self.log_event("guardrail_risk_assessment", metadata)
+        
+        # Record in metrics
+        self.metrics.metrics[f"guardrail_risk_{risk_level}"] = \
+            self.metrics.metrics.get(f"guardrail_risk_{risk_level}", 0) + 1
+            
+        # Record operation-specific risk
+        op_key = f"guardrail_risk_{operation}_{resource_type}"
+        self.metrics.metrics[op_key] = self.metrics.metrics.get(op_key, 0) + 1
+        
+        # Record high-risk operations
+        if risk_level == "high":
+            high_risk_key = "guardrail_high_risk_operations"
+            self.metrics.metrics[high_risk_key] = self.metrics.metrics.get(high_risk_key, 0) + 1
+
+    def log_guardrail_approval(self,
+                             approved: bool,
+                             operation: str,
+                             resource_type: str,
+                             namespace: str,
+                             conversation_id: Optional[str] = None,
+                             user_id: str = "system"):
+        """
+        Log an approval decision for a high-risk operation
+        
+        Args:
+            approved: Whether the operation was approved
+            operation: Operation type (e.g., delete, scale)
+            resource_type: Resource type (e.g., pod, deployment)
+            namespace: Kubernetes namespace
+            conversation_id: Optional conversation context
+            user_id: User identifier
+        """
+        metadata = {
+            "approved": approved,
+            "operation": operation,
+            "resource_type": resource_type,
+            "namespace": namespace,
+            "user_id": user_id,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Add conversation ID if available
+        if conversation_id:
+            metadata["conversation_id"] = conversation_id
+            
+        # Log the event
+        self.log_event("guardrail_approval", metadata)
+        
+        # Record in metrics
+        if approved:
+            self.metrics.metrics["guardrail_approvals"] = \
+                self.metrics.metrics.get("guardrail_approvals", 0) + 1
+        else:
+            self.metrics.metrics["guardrail_rejections"] = \
+                self.metrics.metrics.get("guardrail_rejections", 0) + 1
+
+    def _sanitize_content(self, content: str, max_length: int = 100) -> str:
+        """
+        Create a sanitized preview of content for logging
+        
+        Args:
+            content: Original content
+            max_length: Maximum length for the preview
+            
+        Returns:
+            Sanitized content preview
+        """
+        if not content:
+            return "<empty>"
+            
+        # Truncate
+        if len(content) > max_length:
+            preview = content[:max_length] + "..."
+        else:
+            preview = content
+            
+        # Remove potentially sensitive information
+        sanitized = preview
+        # Remove email patterns
+        sanitized = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '[EMAIL]', sanitized)
+        # Remove IP address patterns
+        sanitized = re.sub(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', '[IP_ADDRESS]', sanitized)
+        # Remove token patterns
+        sanitized = re.sub(r'(?:token|bearer|api[_-]?key)[^\w\s]*[=:][^\w\s]*[\w\d-._~+/]+', '[TOKEN]', sanitized, flags=re.IGNORECASE)
+        # Remove password patterns
+        sanitized = re.sub(r'(?:password|pwd|passwd)[^\w\s]*[=:][^\w\s]*[^\s]+', '[PASSWORD]', sanitized, flags=re.IGNORECASE)
+        
+        return sanitized
 
 
 # Singleton access

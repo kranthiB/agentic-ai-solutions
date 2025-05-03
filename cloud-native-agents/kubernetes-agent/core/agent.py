@@ -6,7 +6,7 @@ from typing import Optional
 from autogen import ConversableAgent, config_list_from_json, register_function,  LLMConfig
 
 # Import your system prompt
-from utils.prompt_templates import KUBERNETES_AGENT_SYSTEM_PROMPT
+from utils.prompt_templates import KUBERNETES_AGENT_SYSTEM_PROMPT_WITH_GUARDRAILS
 
 # Import all tool modules (classes)
 from tools.kubectl_tools import KubectlTools
@@ -18,6 +18,7 @@ from tools.namespace_tools import NamespaceTools
 from tools.node_tools import NodeTools
 from tools.config_tools import ConfigTools
 from tools.resource_tools import ResourceTools
+from tools.guardrail_tools import GuardrailTools
 from tools.registry import get_tools_registry, Tool
 
 # Import monitoring components
@@ -27,8 +28,11 @@ from monitoring.metrics_collector import get_metrics_collector
 from monitoring.event_audit_log import get_audit_logger
 from monitoring.prometheus_exporter import start_metrics_export
 
-start_metrics_export()
+# NEW: Import guardrail service
+from services.guardrail.guardrail_service import get_guardrail_service
 
+start_metrics_export()
+    
 class KubernetesAgent:
     """Central Kubernetes AI agent combining memory, tools, planning, and LLM access."""
 
@@ -38,6 +42,9 @@ class KubernetesAgent:
         self.metrics = get_metrics_collector()
         self.audit = get_audit_logger()
         self.tools_registry = get_tools_registry()
+
+        # NEW: Initialize guardrail service
+        self.guardrail_service = get_guardrail_service()
 
         # Track initialization time
         start_time = time.time()
@@ -71,7 +78,7 @@ class KubernetesAgent:
         with llm_config:
             self.agent = ConversableAgent(
                 name="kube_assist",
-                system_message=KUBERNETES_AGENT_SYSTEM_PROMPT,
+                system_message=KUBERNETES_AGENT_SYSTEM_PROMPT_WITH_GUARDRAILS,
             )
 
             # Log agent creation
@@ -109,6 +116,7 @@ class KubernetesAgent:
             tool_count += self._register_namespace_tools()
             tool_count += self._register_config_tools()
             tool_count += self._register_resource_tools()
+            tool_count += self._register_guardrail_tools()
 
             # Log successful tool initialization
             self.logger.info("All tool classes initialized successfully (%d tools total)", tool_count)
@@ -753,6 +761,46 @@ class KubernetesAgent:
         self.metrics.record_tool_result("node_tools_registration", True)
         return tools_count
 
+    def _register_guardrail_tools(self):
+        """Register guardrail-specific tools"""
+        tools_count = 0
+        
+        # Register a tool to check operation permissions
+        register_function(
+            GuardrailTools.check_operation_permission,
+            caller=self.agent,
+            executor=self.executor_agent,
+            description="Check if an operation is permitted by the guardrail system.",
+            name="check_permission",
+        )
+        self.tools_registry.register_tool(tool=Tool(
+            name="check_permission",
+            description="Check if an operation is permitted by the guardrail system.",
+            category="security"
+        ))
+        tools_count += 1
+        
+        # Register a tool to analyze operation risk
+        register_function(
+            GuardrailTools.analyze_operation_risk,
+            caller=self.agent,
+            executor=self.executor_agent,
+            description="Analyze the risk level of a Kubernetes operation.",
+            name="analyze_risk",
+        )
+        self.tools_registry.register_tool(tool=Tool(
+            name="analyze_risk",
+            description="Analyze the risk level of a Kubernetes operation.",
+            category="security"
+        ))
+        tools_count += 1
+        
+        # Record category metrics
+        self.metrics.record_tool_result("guardrail_tools_registration", True)
+        
+        return tools_count
+    
+        
     def get_agent(self) -> ConversableAgent:
         """Returns the instantiated Kubernetes Assistant Agent."""
         return self.agent

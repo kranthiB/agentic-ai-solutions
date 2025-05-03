@@ -28,6 +28,9 @@ from monitoring.event_audit_log import get_audit_logger
 
 from reflection.reflection_engine import get_reflection_engine
 
+# Import guardrail service
+from services.guardrail.guardrail_service import get_guardrail_service
+
 # Import API bridge for WebSocket updates
 try:
     import api_bridge
@@ -45,6 +48,9 @@ class ConversationManagerAPI:
         self.metrics = get_metrics_collector()
         self.audit = get_audit_logger()
         self.reflection_engine = get_reflection_engine()
+        
+        # Initialize guardrail service
+        self.guardrail_service = get_guardrail_service()
         
         self.logger.info("Initializing ConversationManagerAPI with WebSocket integration")
         
@@ -81,7 +87,7 @@ class ConversationManagerAPI:
             # Log initialization event
             self.audit.log_event("conversation_manager_initialized", {
                 "conversation_id": self.conversation_id,
-                "components": ["agent", "planner", "executor", "memory", "feedback", "learning"],
+                "components": ["agent", "planner", "executor", "memory", "feedback", "learning", "guardrails"],
                 "websocket_enabled": WEBSOCKET_ENABLED
             })
             
@@ -122,6 +128,33 @@ class ConversationManagerAPI:
             conversation_id = str(uuid.uuid4())
             
         self.logger.info("Starting conversation %s for goal: %s", conversation_id, user_goal)
+        
+        # Validate user goal through guardrails
+        is_valid, reason = await self.guardrail_service.validate_user_input(
+            user_input=user_goal,
+            user_id="conversation_manager",
+            conversation_id=conversation_id,
+            metadata={"goal_category": goal_category}
+        )
+        
+        # Check if goal was blocked by guardrails
+        if not is_valid:
+            # Check enforcement level
+            config = self.guardrail_service.config
+            if config.get("enforcement_level") == "block":
+                self.logger.warning(f"Conversation goal blocked by guardrails: {reason}")
+                self.audit.log_event("guardrail_blocked_conversation", {
+                    "conversation_id": conversation_id,
+                    "goal": user_goal,
+                    "reason": reason,
+                    "goal_category": goal_category
+                })
+                
+                # Return a blocked message
+                return f"## ⚠️ Conversation Goal Blocked\n\nThe requested goal could not be processed due to safety guardrails: {reason}\n\nPlease rephrase your request in a way that follows our safety guidelines."
+            else:
+                # Log warning but continue
+                self.logger.warning(f"Guardrail warning for conversation goal (non-blocking): {reason}")
         
         # Track conversation execution time
         conversation_start = time.time()
@@ -514,6 +547,18 @@ class ConversationManagerAPI:
             
             # Generate the combined results
             result_text = self.combine_task_results(full_response["tasks"])
+            
+            # Validate final output through guardrails before returning
+            is_valid, reason, filtered_output = await self.guardrail_service.validate_llm_output(
+                output=result_text,
+                context={"conversation_id": conversation_id, "goal_category": goal_category}
+            )
+            
+            # Use filtered output if modified
+            if not is_valid:
+                self.logger.info(f"Conversation output modified by guardrails: {reason}")
+                result_text = filtered_output
+                
             return result_text
             
         except Exception as e:
@@ -577,6 +622,32 @@ class ConversationManagerAPI:
             Response text
         """
         self.logger.info(f"Processing follow-up query for conversation {conversation_id}: {query}")
+        
+        # Validate follow-up query through guardrails
+        is_valid, reason = await self.guardrail_service.validate_user_input(
+            user_input=query,
+            user_id="conversation_manager",
+            conversation_id=conversation_id,
+            metadata={"query_type": "followup"}
+        )
+        
+        # Check if query was blocked by guardrails
+        if not is_valid:
+            # Check enforcement level
+            config = self.guardrail_service.config
+            if config.get("enforcement_level") == "block":
+                self.logger.warning(f"Follow-up query blocked by guardrails: {reason}")
+                self.audit.log_event("guardrail_blocked_followup", {
+                    "conversation_id": conversation_id,
+                    "query": query,
+                    "reason": reason
+                })
+                
+                # Return a blocked message
+                return f"## ⚠️ Follow-Up Query Blocked\n\nYour follow-up question could not be processed due to safety guardrails: {reason}\n\nPlease rephrase your question in a way that follows our safety guidelines."
+            else:
+                # Log warning but continue
+                self.logger.warning(f"Guardrail warning for follow-up query (non-blocking): {reason}")
         
         # Send WebSocket notification that agent is thinking
         if WEBSOCKET_ENABLED:
@@ -651,11 +722,24 @@ class ConversationManagerAPI:
                 except Exception as e:
                     self.logger.error(f"Error sending thinking status update: {str(e)}")
             
-            # Return the result
+            # Get final result text
             if isinstance(result, dict) and "result" in result:
-                return result["result"]
+                result_text = result["result"]
+            else:
+                result_text = str(result)
+                
+            # Validate final output through guardrails before returning
+            is_valid, reason, filtered_output = await self.guardrail_service.validate_llm_output(
+                output=result_text,
+                context={"conversation_id": conversation_id, "query_type": "followup"}
+            )
             
-            return str(result)
+            # Use filtered output if modified
+            if not is_valid:
+                self.logger.info(f"Follow-up output modified by guardrails: {reason}")
+                result_text = filtered_output
+            
+            return result_text
             
         except Exception as e:
             self.logger.error(f"Error processing follow-up query: {str(e)}")
