@@ -1,4 +1,5 @@
 # api/controllers/conversation_controller.py
+import datetime
 from fastapi import APIRouter, HTTPException, status, BackgroundTasks
 from typing import List, Optional
 import uuid
@@ -46,6 +47,14 @@ async def create_conversation(
         user_id=fixed_user_id,
         goal=conversation.goal,
         goal_category=conversation.goal_category
+    )
+
+    message_id = str(uuid.uuid4())
+    await conversation_service.add_message(
+        conversation_id=conversation_id,
+        message_id=message_id,
+        content=conversation.goal,
+        sender="user"
     )
     
     # Start processing in the background
@@ -189,8 +198,11 @@ async def list_messages(
         limit=limit,
         before_id=before_id
     )
+
+    # Sort messages by created_at ascending
+    sorted_messages = sorted(messages, key=lambda x: datetime.datetime.fromisoformat(x['created_at']))
     
-    return messages
+    return sorted_messages
 
 @router.delete("/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_conversation(

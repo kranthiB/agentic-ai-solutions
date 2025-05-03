@@ -1148,15 +1148,17 @@
         }
         
         .suggestion-chip {
-            white-space: nowrap;
-            padding: var(--space-2) var(--space-3);
             background-color: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-full);
-            font-size: 0.8125rem;
+            padding: 6px 12px;
+            font-size: 0.875rem;
             color: var(--text-secondary);
             cursor: pointer;
             transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .suggestion-chip:hover {
@@ -1794,6 +1796,205 @@
             box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
         }
 
+        .new-conversation-dialog {
+            width: 550px;
+            max-width: 90vw;
+        }
+
+        .new-conversation-header {
+            text-align: center;
+            padding: 24px 24px 16px;
+        }
+
+        .new-conversation-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+        }
+
+        .new-conversation-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .new-conversation-subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .new-conversation-input-wrapper {
+            padding: 0 24px;
+        }
+
+        .new-conversation-input {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background-color: var(--bg-color);
+            resize: none;
+            transition: var(--transition-fast);
+        }
+
+        .new-conversation-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .new-conversation-suggestions {
+            padding: 16px 24px;
+        }
+
+        .new-conversation-suggestion-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .suggestion-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .suggestion-chip:hover {
+            background-color: var(--accent-light);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .suggestion-chip i {
+            font-size: 0.8rem;
+        }
+
+        .new-conversation-actions {
+            display: flex;
+            padding: 16px 24px 24px;
+            gap: 12px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 8px;
+        }
+
+        .dialog-button {
+            flex: 1;
+            padding: 12px;
+            border-radius: var(--radius-lg);
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            text-align: center;
+            border: none;
+        }
+
+        .dialog-button-cancel {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .dialog-button-cancel:hover {
+            background-color: var(--bg-color);
+        }
+
+        .dialog-button-confirm {
+            background-color: var(--primary-color);
+            color: white;
+            opacity: 0.7;
+        }
+
+        .dialog-button-confirm:hover:not(:disabled) {
+            opacity: 1;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+        }
+
+        .dialog-button-confirm:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .dialog-button-confirm.active {
+            opacity: 1;
+        }
+
+        .task-response {
+            background: #fff;
+            padding: 16px;
+            border: 1px solid #e1e4e8;
+            border-radius: 10px;
+            margin-top: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .task-result-meta {
+            font-size: 0.85em;
+            color: #777;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .markdown-viewer {
+            font-size: 0.95em;
+            line-height: 1.7;
+            color: #333;
+        }
+
+        .markdown-viewer h1,
+        .markdown-viewer h2,
+        .markdown-viewer h3 {
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+        }
+
+        .markdown-viewer ul {
+            padding-left: 1.2em;
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
+        }
+
+        .markdown-viewer li {
+            margin-bottom: 4px;
+        }
+
+        .markdown-viewer code {
+            background-color: #f5f5f5;
+            padding: 2px 5px;
+            font-family: Menlo, Consolas, monospace;
+            font-size: 0.9em;
+            border-radius: 4px;
+            color: #d63384;
+        }
+
+        .markdown-viewer pre {
+            background-color: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -2189,7 +2390,7 @@
             
             // Button actions
             sendButton.addEventListener('click', sendMessage);
-            newChatButton.addEventListener('click', startNewConversation);
+            newChatButton.addEventListener('click', showNewConversationDialog);
             themeToggle.addEventListener('click', toggleTheme);
             exportButton.addEventListener('click', exportConversation);
             uploadButton.addEventListener('click', () => toggleFileUpload());
@@ -2586,11 +2787,126 @@
             }
         }
 
+        function showNewConversationDialog() {
+            // Create the dialog overlay
+            const dialogOverlay = document.createElement('div');
+            dialogOverlay.className = 'custom-dialog-overlay';
+            
+            const dialogContent = document.createElement('div');
+            dialogContent.className = 'custom-dialog new-conversation-dialog';
+            
+            dialogContent.innerHTML = `
+                <div class="new-conversation-header">
+                    <div class="new-conversation-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="new-conversation-title">Start Your Kubernetes Journey</div>
+                    <div class="new-conversation-subtitle">What would you like to explore today?</div>
+                </div>
+                <div class="new-conversation-input-wrapper">
+                    <textarea class="new-conversation-input" 
+                        placeholder="e.g., Help me debug my pod that's stuck in CrashLoopBackOff..." 
+                        rows="3"></textarea>
+                </div>
+                <div class="new-conversation-suggestions">
+                    <div class="new-conversation-suggestion-title">Popular Topics</div>
+                    <div class="suggestion-chips">
+                        <div class="suggestion-chip" data-suggestion="Scale my deployment to handle more traffic">
+                            <i class="fas fa-expand-arrows-alt"></i> Scaling
+                        </div>
+                        <div class="suggestion-chip" data-suggestion="Troubleshoot pod that won't start">
+                            <i class="fas fa-bug"></i> Troubleshooting
+                        </div>
+                        <div class="suggestion-chip" data-suggestion="Set up monitoring for my Kubernetes cluster">
+                            <i class="fas fa-chart-line"></i> Monitoring
+                        </div>
+                        <div class="suggestion-chip" data-suggestion="Configure persistent storage for my application">
+                            <i class="fas fa-database"></i> Storage
+                        </div>
+                    </div>
+                </div>
+                <div class="new-conversation-actions">
+                    <button class="dialog-button dialog-button-cancel">Cancel</button>
+                    <button class="dialog-button dialog-button-confirm" disabled>Start Conversation</button>
+                </div>
+            `;
+            
+            dialogOverlay.appendChild(dialogContent);
+            document.body.appendChild(dialogOverlay);
+            
+            // Get elements
+            const inputField = dialogContent.querySelector('.new-conversation-input');
+            const confirmButton = dialogContent.querySelector('.dialog-button-confirm');
+            const cancelButton = dialogContent.querySelector('.dialog-button-cancel');
+            const suggestionChips = dialogContent.querySelectorAll('.suggestion-chip');
+            
+            // Enable/disable confirm button based on input
+            inputField.addEventListener('input', () => {
+                confirmButton.disabled = inputField.value.trim() === '';
+                if (!confirmButton.disabled) {
+                    confirmButton.classList.add('active');
+                } else {
+                    confirmButton.classList.remove('active');
+                }
+            });
+            
+            // Focus the input field
+            setTimeout(() => inputField.focus(), 100);
+            
+            // Add event listeners for suggestion chips
+            suggestionChips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    inputField.value = chip.getAttribute('data-suggestion');
+                    confirmButton.disabled = false;
+                    confirmButton.classList.add('active');
+                });
+            });
+            
+            // Add event listeners for buttons
+            cancelButton.addEventListener('click', () => {
+                dialogOverlay.remove();
+            });
+            
+            confirmButton.addEventListener('click', () => {
+                const goal = inputField.value.trim();
+                if (goal) {
+                    dialogOverlay.remove();
+                    startNewConversation(goal);
+                }
+            });
+            
+            // Submit on Enter
+            inputField.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey && inputField.value.trim()) {
+                    e.preventDefault();
+                    const goal = inputField.value.trim();
+                    dialogOverlay.remove();
+                    startNewConversation(goal);
+                }
+            });
+            
+            // Close on outside click
+            dialogOverlay.addEventListener('click', (e) => {
+                if (e.target === dialogOverlay) {
+                    dialogOverlay.remove();
+                }
+            });
+            
+            // Close on Escape key
+            document.addEventListener('keydown', function escapeHandler(e) {
+                if (e.key === 'Escape') {
+                    document.removeEventListener('keydown', escapeHandler);
+                    dialogOverlay.remove();
+                }
+            });
+        }
         // Start a new conversation
-        async function startNewConversation() {
+        async function startNewConversation(goal = null) {
             // Prompt for goal with a nicer UI in the future
-            const goal = prompt('What do you want to accomplish with Kubernetes?');
-            if (!goal) return;
+            if (!goal) {
+                goal = prompt('What do you want to accomplish with Kubernetes?');
+                if (!goal) return;
+            }
 
             try {
                 updateStatus('connecting', 'Starting new conversation...');
@@ -3033,7 +3349,9 @@
 
         // Handle task status updates
         function handleTaskStatus(content) {
+            console.log('Task status update:', content);
             const taskId = content.task_id;
+            const taskDescription = content.task_description || `Task ${taskId.substring(0, 8)}`;
             const status = content.status;
             const details = content.details || {};
 
@@ -3045,23 +3363,21 @@
                 taskElement.className = 'task-progress';
                 taskElement.id = `task-${taskId}`;
 
-                // Insert before typing indicator if present, or at the end
                 const typingIndicator = document.getElementById('typing-indicator');
                 if (typingIndicator) {
                     messagesContainer.insertBefore(taskElement, typingIndicator);
                 } else {
                     messagesContainer.appendChild(taskElement);
                 }
-                
+
                 scrollToBottom();
             }
 
             // Update task status and progress
             let progress = 0;
             let taskIcon = 'fa-spinner fa-pulse';
-            let taskDescription = details.description || `Task ${taskId.substring(0, 8)}`;
             let estimatedTime = '';
-            
+
             switch (status) {
                 case 'pending':
                     progress = 0;
@@ -3070,29 +3386,16 @@
                 case 'in_progress':
                     progress = details.progress_percentage || 50;
                     taskIcon = 'fa-spinner fa-pulse';
-                    
-                    // Add estimated time if available
+
                     if (details.estimated_seconds) {
                         const seconds = details.estimated_seconds;
-                        if (seconds < 60) {
-                            estimatedTime = `${seconds}s remaining`;
-                        } else {
-                            estimatedTime = `${Math.round(seconds / 60)}m remaining`;
-                        }
+                        estimatedTime = seconds < 60 ? `${seconds}s remaining` : `${Math.round(seconds / 60)}m remaining`;
                     }
                     break;
                 case 'completed':
                     progress = 100;
                     taskIcon = 'fa-check-circle';
-
-                    // If task completed with a response, add a new agent message
-                    if (details.response && details.response.result) {
-                        // Hide agent thinking indicator
-                        hideAgentThinking();
-                        
-                        // Add message with the response
-                        addMessage('agent', details.response.result);
-                    }
+                    hideAgentThinking(); // Optional
                     break;
                 case 'failed':
                     progress = 100;
@@ -3100,7 +3403,7 @@
                     break;
             }
 
-            // Update task element with more details
+            // Generate core task UI
             taskElement.innerHTML = `
                 <div class="task-header">
                     <div class="task-title">
@@ -3109,8 +3412,8 @@
                     </div>
                     <span class="task-status ${status}">
                         <i class="fas ${status === 'pending' ? 'fa-clock' : 
-                                       status === 'in_progress' ? 'fa-spinner fa-pulse' : 
-                                       status === 'completed' ? 'fa-check' : 'fa-times'}"></i>
+                                    status === 'in_progress' ? 'fa-spinner fa-pulse' : 
+                                    status === 'completed' ? 'fa-check' : 'fa-times'}"></i>
                         ${status.replace('_', ' ')}
                     </span>
                 </div>
@@ -3130,9 +3433,32 @@
                 ` : ''}
             `;
 
-            // Scroll to show the updated task
+            // Append markdown response block for completed tasks
+            if (status === 'completed' && details.result && details.result.response && details.result.response.result) {
+                const markdownContent = details.result.response.result;
+                const tokenCount = details.result.response.token_count || 0;
+                const execTime = details.result.response.execution_time?.toFixed(2) || 'N/A';
+
+                const markdownBlock = document.createElement('div');
+                markdownBlock.className = 'task-response';
+
+                markdownBlock.innerHTML = `
+                    <div class="task-result-meta">
+                        <span><strong>Token Count:</strong> ${tokenCount}</span>
+                        <span style="margin-left: 20px;"><strong>Execution Time:</strong> ${execTime}s</span>
+                    </div>
+                    <div class="markdown-viewer">${marked.parse(markdownContent)}</div>
+                `;
+                console.log('Markdown content:', markdownContent);
+                taskElement.appendChild(markdownBlock);
+            } else {
+                console.log('in else', status)
+            }
+
+            // Scroll to updated content
             taskElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
+
 
         // Handle plan updates
         function handlePlanUpdate(content) {

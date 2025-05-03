@@ -130,7 +130,7 @@ class TaskExecutor:
                 chat_result = executor_agent.initiate_chat(
                     recipient=agent,
                     message=user_prompt,
-                    max_turns=2
+                    max_turns=2,
                 )
                 llm_end_time = time.time()
                 llm_latency = llm_end_time - llm_start_time

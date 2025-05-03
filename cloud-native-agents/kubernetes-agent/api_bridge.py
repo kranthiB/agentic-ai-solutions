@@ -30,6 +30,7 @@ async def send_plan_update(conversation_id: str, plan_id: str, tasks: List[Dict[
 async def send_task_update(
     conversation_id: str, 
     task_id: str, 
+    task_description: str,
     status: str, 
     details: Optional[Dict[str, Any]] = None
 ):
@@ -46,6 +47,7 @@ async def send_task_update(
         await connection_manager.broadcast_task_status(
             conversation_id=conversation_id,
             task_id=task_id,
+            task_description=task_description,
             status=status,
             details=details or {}
         )
@@ -124,6 +126,7 @@ async def update_conversation_service_task_status(
 async def update_task_progress(
     conversation_id: str,
     task_id: str,
+    task_description: str,
     status: str,
     progress_percentage: float = None,
     result: Optional[Dict[str, Any]] = None
@@ -153,6 +156,7 @@ async def update_task_progress(
     await send_task_update(
         conversation_id=conversation_id,
         task_id=task_id,
+        task_description=task_description,
         status=status,
         details=details
     )

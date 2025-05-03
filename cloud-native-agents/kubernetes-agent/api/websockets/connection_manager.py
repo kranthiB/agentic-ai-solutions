@@ -66,6 +66,7 @@ class ConnectionManager:
         """
         Broadcast a message to all connected clients for a conversation
         """
+        self.logger.info(f"Broadcasting message: {message.to_json()}")
         conversation_id = message.conversation_id
         if conversation_id not in self.active_connections:
             self.logger.warning(f"No active connections for conversation {conversation_id}")
@@ -73,12 +74,11 @@ class ConnectionManager:
         try:
             if conversation_id in self.active_connections:
                 for websocket in self.active_connections[conversation_id]:
-                    await websocket.send_text(message)
+                    await websocket.send_text(message.to_json())
         except Exception as e:
             self.logger.error(f"Error broadcasting message: {str(e)}")
-            self.disconnect(conversation_id)
 
-    async def broadcast_task_status(self, conversation_id: str, task_id: str, status: str, details: Dict[str, Any] = None):
+    async def broadcast_task_status(self, conversation_id: str, task_id: str, task_description: str, status: str, details: Dict[str, Any] = None):
         """
         Broadcast a task status update
         """
@@ -88,6 +88,7 @@ class ConnectionManager:
                 conversation_id=conversation_id,
                 content={
                     "task_id": task_id,
+                    "task_description": task_description,
                     "status": status,
                     "details": details or {}
                 }

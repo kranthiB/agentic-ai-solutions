@@ -236,6 +236,7 @@ class ConversationManagerAPI:
                         await api_bridge.update_task_progress(
                             conversation_id=conversation_id,
                             task_id=task["id"],
+                            task_description=task["description"],
                             status="pending",
                             progress_percentage=0.0
                         )
@@ -255,6 +256,7 @@ class ConversationManagerAPI:
                         await api_bridge.update_task_progress(
                             conversation_id=conversation_id,
                             task_id=task_id,
+                            task_description=task_description,
                             status="in_progress",
                             progress_percentage=50.0
                         )
@@ -333,6 +335,7 @@ class ConversationManagerAPI:
                             await api_bridge.update_task_progress(
                                 conversation_id=conversation_id,
                                 task_id=task_id,
+                                task_description=task_description,
                                 status="completed",
                                 progress_percentage=100.0,
                                 result={"response": result}
@@ -380,6 +383,7 @@ class ConversationManagerAPI:
                             await api_bridge.update_task_progress(
                                 conversation_id=conversation_id,
                                 task_id=task_id,
+                                task_description=task_description,
                                 status="failed",
                                 progress_percentage=100.0,
                                 result={"error": str(e)}
@@ -606,6 +610,7 @@ class ConversationManagerAPI:
                     await api_bridge.update_task_progress(
                         conversation_id=conversation_id,
                         task_id=task_id,
+                        task_description=task["description"],
                         status="in_progress",
                         progress_percentage=50.0
                     )
@@ -631,6 +636,7 @@ class ConversationManagerAPI:
                     await api_bridge.update_task_progress(
                         conversation_id=conversation_id,
                         task_id=task_id,
+                        task_description=task["description"],
                         status="completed",
                         progress_percentage=100.0,
                         result={"response": result}
