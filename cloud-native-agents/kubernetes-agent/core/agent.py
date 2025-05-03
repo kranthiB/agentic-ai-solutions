@@ -18,6 +18,7 @@ from tools.namespace_tools import NamespaceTools
 from tools.node_tools import NodeTools
 from tools.config_tools import ConfigTools
 from tools.resource_tools import ResourceTools
+from tools.registry import get_tools_registry, Tool
 
 # Import monitoring components
 from monitoring.agent_logger import get_logger
@@ -36,7 +37,8 @@ class KubernetesAgent:
         self.cost_tracker = get_cost_tracker()
         self.metrics = get_metrics_collector()
         self.audit = get_audit_logger()
-        
+        self.tools_registry = get_tools_registry()
+
         # Track initialization time
         start_time = time.time()
         
@@ -154,7 +156,6 @@ class KubernetesAgent:
         if hasattr(self.metrics, 'record_gauge'):
             self.metrics.record_gauge("agent_startup_time_seconds", init_duration)
 
-
     def _register_resource_tools(self):
         tools_count = 0
         register_function(
@@ -164,6 +165,11 @@ class KubernetesAgent:
             description="Retrieve detailed info of any Kubernetes resource.",
             name="get_resource",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="get_resource",
+            description="Retrieve detailed info of any Kubernetes resource.",
+            category="resource"
+        ))
         tools_count += 1
         register_function(
             ResourceTools.analyze_resource,
@@ -172,6 +178,11 @@ class KubernetesAgent:
             description="Analyze the health and readiness of a Kubernetes resource.",
             name="analyze_resource",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="analyze_resource",
+            description="Analyze the health and readiness of a Kubernetes resource.",
+            category="resource"
+        ))
         tools_count += 1
         # Record category metrics
         self.metrics.record_tool_result("resource_tools_registration", True)
@@ -187,6 +198,11 @@ class KubernetesAgent:
             description="Retrieve a ConfigMap.",
             name="get_configmap",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="get_configmap",
+            description="Retrieve a ConfigMap.",
+            category="config"
+        ))
         tools_count += 1
         register_function(
             ConfigTools.list_configmaps,
@@ -195,6 +211,11 @@ class KubernetesAgent:
             description="List ConfigMaps in a namespace.",
             name="list_configmaps",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="list_configmaps",
+            description="List ConfigMaps in a namespace.",
+            category="config"
+        ))
         tools_count += 1
         register_function(
             ConfigTools.create_configmap,
@@ -203,6 +224,11 @@ class KubernetesAgent:
             description="Create a new ConfigMap.",
             name="create_configmap",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="create_configmap",
+            description="Create a new ConfigMap.",
+            category="config"
+        ))
         tools_count += 1
         register_function(
             ConfigTools.update_configmap,
@@ -211,6 +237,11 @@ class KubernetesAgent:
             description="Update an existing ConfigMap.",
             name="update_configmap",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="update_configmap",
+            description="Update an existing ConfigMap.",
+            category="config"
+        ))
         tools_count += 1
         register_function(
             ConfigTools.delete_configmap,
@@ -219,6 +250,11 @@ class KubernetesAgent:
             description="Delete a ConfigMap.",
             name="delete_configmap",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="delete_configmap",
+            description="Delete a ConfigMap.",
+            category="config"
+        ))
         tools_count += 1
 
         # Record category metrics
@@ -234,6 +270,11 @@ class KubernetesAgent:
             description="Fetch metadata and status of a Kubernetes namespace.",
             name="get_namespace",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="get_namespace",
+            description="Fetch metadata and status of a Kubernetes namespace.",
+            category="namespace"
+        ))
         tools_count += 1
         register_function(
             NamespaceTools.list_namespaces,
@@ -242,6 +283,11 @@ class KubernetesAgent:
             description="List all Kubernetes namespaces.",
             name="list_namespaces",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="list_namespaces",
+            description="List all Kubernetes namespaces.",
+            category="namespace"
+        ))
         tools_count += 1
         register_function(
             NamespaceTools.create_namespace,
@@ -250,6 +296,11 @@ class KubernetesAgent:
             description="Create a new Kubernetes namespace.",
             name="create_namespace",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="create_namespace",
+            description="Create a new Kubernetes namespace.",
+            category="namespace"
+        ))
         tools_count += 1
         register_function(
             NamespaceTools.delete_namespace,
@@ -258,6 +309,11 @@ class KubernetesAgent:
             description="Delete a Kubernetes namespace.",
             name="delete_namespace",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="delete_namespace",
+            description="Delete a Kubernetes namespace.",
+            category="namespace"
+        ))
         tools_count += 1
 
         # Record category metrics
@@ -273,6 +329,11 @@ class KubernetesAgent:
             description="Retrieve logs from a Kubernetes pod.",
             name="get_pod_logs",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="get_pod_logs",
+            description="Retrieve logs from a Kubernetes pod.",
+            category="logging"
+        ))
         tools_count += 1
         register_function(
             LoggingTools.analyze_pod_logs,
@@ -281,6 +342,11 @@ class KubernetesAgent:
             description="Analyze pod logs for patterns and errors.",
             name="analyze_pod_logs",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="analyze_pod_logs",
+            description="Analyze pod logs for patterns and errors.",
+            category="logging"
+        ))
         tools_count += 1
 
         # Record category metrics
@@ -296,6 +362,11 @@ class KubernetesAgent:
             description="Retrieve details of a Kubernetes Service.",
             name="get_service",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="get_service",
+            description="Retrieve details of a Kubernetes Service.",
+            category="service"
+        ))
         tools_count += 1
         register_function(
             ServiceTools.create_service,
@@ -304,6 +375,11 @@ class KubernetesAgent:
             description="Create a Kubernetes Service dynamically.",
             name="create_service",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="create_service",
+            description="Create a Kubernetes Service dynamically.",
+            category="service"
+        ))
         tools_count += 1
 
         # Record category metrics
@@ -320,6 +396,11 @@ class KubernetesAgent:
             description="Retrieve details about a specific pod.",
             name="get_pod",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="get_pod",
+            description="Retrieve details about a specific pod.",
+            category="pod"
+        ))
         tools_count += 1
         register_function(
             PodTools.list_pods,
@@ -328,6 +409,11 @@ class KubernetesAgent:
             description="List pods in a namespace with filtering.",
             name="list_pods",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="list_pods",
+            description="List pods in a namespace with filtering.",
+            category="pod"
+        ))
         tools_count += 1
         register_function(
             PodTools.exec_command,
@@ -336,6 +422,11 @@ class KubernetesAgent:
             description="Execute a command inside a running pod container.",
             name="exec_command_in_pod",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="exec_command_in_pod",
+            description="Execute a command inside a running pod container.",
+            category="pod"
+        ))
         tools_count += 1
 
         # Record category metrics
@@ -351,6 +442,11 @@ class KubernetesAgent:
             description="Retrieve Kubernetes resources (pods, deployments, services, etc.)",
             name="kubectl_get",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="kubectl_get",
+            description="Retrieve Kubernetes resources (pods, deployments, services, etc.)",
+            category="kubectl"
+        ))
         tools_count += 1
         register_function(
             KubectlTools.describe,
@@ -359,6 +455,11 @@ class KubernetesAgent:
             description="Get detailed description of a resource.",
             name="kubectl_describe",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="kubectl_describe",
+            description="Get detailed description of a resource.",
+            category="kubectl"
+        ))
         tools_count += 1
         register_function(
             KubectlTools.create,
@@ -367,6 +468,11 @@ class KubernetesAgent:
             description="Create Kubernetes resources from YAML manifests.",
             name="kubectl_create",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="kubectl_create",
+            description="Create Kubernetes resources from YAML manifests.",
+            category="kubectl"
+        ))
         tools_count += 1
         register_function(
             KubectlTools.delete,
@@ -375,6 +481,11 @@ class KubernetesAgent:
             description="Delete Kubernetes resources.",
             name="kubectl_delete",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="kubectl_delete",
+            description="Delete Kubernetes resources.",
+            category="kubectl"
+        ))
         tools_count += 1
         register_function(
             KubectlTools.apply,
@@ -383,6 +494,11 @@ class KubernetesAgent:
             description="Apply YAML manifests (create/update resources).",
             name="kubectl_apply",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="kubectl_apply",
+            description="Apply YAML manifests (create/update resources).",
+            category="kubectl"
+        ))
         tools_count += 1
         register_function(
             KubectlTools.patch,
@@ -391,6 +507,11 @@ class KubernetesAgent:
             description="Patch fields of a Kubernetes resource.",
             name="kubectl_patch",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="kubectl_patch",
+            description="Patch fields of a Kubernetes resource.",
+            category="kubectl"
+        ))
         tools_count += 1
         register_function(
             KubectlTools.logs,
@@ -399,6 +520,11 @@ class KubernetesAgent:
             description="Fetch logs from a Kubernetes pod.",
             name="kubectl_logs",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="kubectl_logs",
+            description="Fetch logs from a Kubernetes pod.",
+            category="kubectl"
+        ))
         tools_count += 1
 
         # Record category metrics
@@ -414,6 +540,11 @@ class KubernetesAgent:
             description="Retrieve details of a Kubernetes Deployment.",
             name="get_deployment",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="get_deployment",
+            description="Retrieve details of a Kubernetes Deployment.",
+            category="deployment"
+        ))
         tools_count += 1
         register_function(
             DeploymentTools.list_deployments,
@@ -422,6 +553,11 @@ class KubernetesAgent:
             description="List all Deployments.",
             name="list_deployments",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="list_deployments",
+            description="List all Deployments.",
+            category="deployment"
+        ))
         tools_count += 1
         register_function(
             DeploymentTools.create_deployment,
@@ -430,6 +566,11 @@ class KubernetesAgent:
             description="Create a Kubernetes Deployment using YAML.",
             name="create_deployment",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="create_deployment",
+            description="Create a Kubernetes Deployment using YAML.",
+            category="deployment"
+        ))
         tools_count += 1
 
         # Record category metrics
@@ -445,6 +586,11 @@ class KubernetesAgent:
             description="List all nodes in the cluster.",
             name="list_nodes",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="list_nodes",
+            description="List all nodes in the cluster.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.get_node,
@@ -453,6 +599,11 @@ class KubernetesAgent:
             description="Retrieve a Kubernetes node's metadata.",
             name="get_node",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="get_node",
+            description="Retrieve a Kubernetes node's metadata.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.describe_node,
@@ -461,6 +612,11 @@ class KubernetesAgent:
             description="Detailed description of a node.",
             name="describe_node",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="describe_node",
+            description="Detailed description of a node.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.get_node_metrics,
@@ -469,6 +625,11 @@ class KubernetesAgent:
             description="Fetch CPU and memory metrics for nodes.",
             name="get_node_metrics",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="get_node_metrics",
+            description="Fetch CPU and memory metrics for nodes.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.cordon_node,
@@ -477,6 +638,11 @@ class KubernetesAgent:
             description="Mark a node as unschedulable.",
             name="cordon_node",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="cordon_node",
+            description="Mark a node as unschedulable.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.uncordon_node,
@@ -485,6 +651,11 @@ class KubernetesAgent:
             description="Allow pod scheduling on a node.",
             name="uncordon_node",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="uncordon_node",
+            description="Allow pod scheduling on a node.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.drain_node,
@@ -493,6 +664,11 @@ class KubernetesAgent:
             description="Evict pods from a node.",
             name="drain_node",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="drain_node",
+            description="Evict pods from a node.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.get_pods_on_node,
@@ -501,6 +677,11 @@ class KubernetesAgent:
             description="List all pods running on a node.",
             name="get_pods_on_node",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="get_pods_on_node",
+            description="List all pods running on a node.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.label_node,
@@ -509,6 +690,11 @@ class KubernetesAgent:
             description="Add or update labels on a node.",
             name="label_node",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="label_node",
+            description="Add or update labels on a node.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.taint_node,
@@ -517,6 +703,11 @@ class KubernetesAgent:
             description="Apply taints to a node.",
             name="taint_node",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="taint_node",
+            description="Apply taints to a node.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.remove_node_taint,
@@ -525,6 +716,11 @@ class KubernetesAgent:
             description="Remove taints from a node.",
             name="remove_node_taint",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="remove_node_taint",
+            description="Remove taints from a node.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.analyze_node,
@@ -533,6 +729,11 @@ class KubernetesAgent:
             description="Analyze health of a Kubernetes node.",
             name="analyze_node",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="analyze_node",
+            description="Analyze health of a Kubernetes node.",
+            category="node"
+        ))
         tools_count += 1
         register_function(
             NodeTools.analyze_cluster_nodes,
@@ -541,6 +742,11 @@ class KubernetesAgent:
             description="Analyze health of all nodes in the cluster.",
             name="analyze_node",
         )
+        self.tools_registry.register_tool(tool=Tool(
+            name="analyze_cluster_nodes",
+            description="Analyze health of all nodes in the cluster.",
+            category="node"
+        ))
         tools_count += 1
 
         # Record category metrics
