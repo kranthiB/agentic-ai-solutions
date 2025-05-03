@@ -1994,6 +1994,160 @@
             color: #333;
         }
 
+        /* Tools Registry Panel Styles */
+        #tools-panel {
+            right: var(--space-6);
+            bottom: 100px;
+            width: 350px;
+            max-height: 70vh;
+        }
+
+        #tools-panel .context-content {
+            max-height: 60vh;
+        }
+
+        .tools-search {
+            margin-bottom: var(--space-4);
+            padding: 0 var(--space-2);
+        }
+
+        .tools-search-input {
+            width: 100%;
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .tools-search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .context-section-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .tool-count {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            font-weight: normal;
+        }
+
+        .tool-item {
+            transition: var(--transition-fast);
+        }
+
+        .tool-item:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .tool-use-button {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: var(--radius-md);
+            padding: var(--space-1) var(--space-2);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .tool-use-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .hidden-tool {
+            display: none;
+        }
+
+        .empty-category {
+            display: none;
+        }
+
+        .tools-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--space-4);
+            padding: var(--space-3);
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        .tools-stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+        }
+
+        .tools-stat-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .tools-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: var(--space-1);
+        }
+
+        .tools-stat-divider {
+            width: 1px;
+            background-color: var(--border-color);
+            align-self: stretch;
+            margin: 0 var(--space-2);
+        }
+
+        .tools-categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-2);
+            margin-bottom: var(--space-4);
+        }
+
+        .category-chip {
+            padding: var(--space-1) var(--space-3);
+            background-color: var(--accent-light);
+            color: var(--primary-color);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .category-chip:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .category-chip i {
+            font-size: 0.7rem;
+        }
+
+        .category-chip-count {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-full);
+            padding: 2px 6px;
+            font-size: 0.65rem;
+            margin-left: 2px;
+        }
 
         @keyframes fadeIn {
             from { opacity: 0; }
@@ -2097,6 +2251,9 @@
                     </div>
                     <button class="header-button" id="context-toggle" title="Show context">
                         <i class="fas fa-cube"></i>
+                    </button>
+                    <button class="header-button" id="tools-toggle" title="Show tools registry">
+                        <i class="fas fa-tools"></i>
                     </button>
                     <button class="header-button" id="export-button" title="Export conversation">
                         <i class="fas fa-download"></i>
@@ -2212,6 +2369,20 @@
         </div>
     </div>
 
+    <div class="context-panel" id="tools-panel">
+        <div class="context-header">
+            <span>Tools Registry</span>
+            <button class="context-close" id="tools-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="context-content" id="tools-content">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-pulse"></i> Loading tools...
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.2.4/mermaid.min.js"></script>
@@ -2224,6 +2395,7 @@
         let isThinking = false;
         let isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         let uploadedFiles = [];
+        let toolsLoaded = false;
         
         // Dynamic suggestion options
         const suggestionSets = {
@@ -2453,6 +2625,10 @@
                     toggleCommandPalette();
                 }
             });
+
+            // Tools Registry
+            document.getElementById('tools-toggle').addEventListener('click', toggleToolsPanel);
+            document.getElementById('tools-close').addEventListener('click', () => toggleToolsPanel(false));
         }
         
         // Toggle dark/light theme
@@ -2615,6 +2791,283 @@
             });
         }
         
+        // Function to toggle tools panel
+        function toggleToolsPanel(show) {
+            const toolsPanel = document.getElementById('tools-panel');
+            if (show === undefined) {
+                show = !toolsPanel.classList.contains('active');
+            }
+            
+            if (show) {
+                toolsPanel.classList.add('active');
+                // If tools haven't been loaded yet, load them
+                if (!toolsLoaded) {
+                    loadTools();
+                }
+                // Hide context panel if open
+                document.getElementById('context-panel').classList.remove('active');
+            } else {
+                toolsPanel.classList.remove('active');
+            }
+        }
+
+        // Function to load and display tools
+        async function loadTools() {
+            try {
+                const response = await fetch('http://localhost:8000/api/tools');
+                if (response.ok) {
+                    const data = await response.json();
+                    displayTools(data.tools);
+                    toolsLoaded = true;
+                } else {
+                    document.getElementById('tools-content').innerHTML = `
+                        <div class="error-message">
+                            <div class="error-title"><i class="fas fa-exclamation-triangle"></i> Error</div>
+                            Failed to load tools. Please try again.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading tools:', error);
+                document.getElementById('tools-content').innerHTML = `
+                    <div class="error-message">
+                        <div class="error-title"><i class="fas fa-exclamation-triangle"></i> Error</div>
+                        Failed to load tools: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Function to display tools by category
+        function displayTools(tools) {
+            // Group tools by category
+            const categories = {};
+            tools.forEach(tool => {
+                if (!categories[tool.category]) {
+                    categories[tool.category] = [];
+                }
+                categories[tool.category].push(tool);
+            });
+            
+            const toolsContent = document.getElementById('tools-content');
+            toolsContent.innerHTML = '';
+            
+            // Sort categories alphabetically
+            const sortedCategories = Object.keys(categories).sort();
+            
+            // Create statistics section
+            const statsSection = document.createElement('div');
+            statsSection.className = 'tools-stats';
+            
+            // Total tools count
+            const totalCount = tools.length;
+            // Category count
+            const categoryCount = sortedCategories.length;
+            // Most tools in category
+            let mostToolsCategory = sortedCategories[0];
+            sortedCategories.forEach(cat => {
+                if (categories[cat].length > categories[mostToolsCategory].length) {
+                    mostToolsCategory = cat;
+                }
+            });
+            
+            statsSection.innerHTML = `
+                <div class="tools-stat-item">
+                    <div class="tools-stat-number">${totalCount}</div>
+                    <div class="tools-stat-label">Total Tools</div>
+                </div>
+                <div class="tools-stat-divider"></div>
+                <div class="tools-stat-item">
+                    <div class="tools-stat-number">${categoryCount}</div>
+                    <div class="tools-stat-label">Categories</div>
+                </div>
+                <div class="tools-stat-divider"></div>
+                <div class="tools-stat-item">
+                    <div class="tools-stat-number">${categories[mostToolsCategory].length}</div>
+                    <div class="tools-stat-label">Most in ${formatCategoryName(mostToolsCategory)}</div>
+                </div>
+            `;
+            
+            toolsContent.appendChild(statsSection);
+            
+            // Create category chips for quick navigation
+            const categoriesSection = document.createElement('div');
+            categoriesSection.className = 'tools-categories';
+            
+            sortedCategories.forEach(category => {
+                const categoryChip = document.createElement('div');
+                categoryChip.className = 'category-chip';
+                categoryChip.innerHTML = `
+                    <i class="${getCategoryIcon(category)}"></i>
+                    ${formatCategoryName(category)}
+                    <span class="category-chip-count">${categories[category].length}</span>
+                `;
+                
+                // Add click event to scroll to category
+                categoryChip.addEventListener('click', () => {
+                    const categoryElement = document.querySelector(`.tools-category[data-category="${category}"]`);
+                    if (categoryElement) {
+                        categoryElement.scrollIntoView({ behavior: 'smooth' });
+                        
+                        // Highlight briefly
+                        categoryElement.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                        setTimeout(() => {
+                            categoryElement.style.backgroundColor = '';
+                            categoryElement.style.transition = 'background-color 0.5s ease';
+                        }, 1000);
+                    }
+                });
+                
+                categoriesSection.appendChild(categoryChip);
+            });
+            
+            toolsContent.appendChild(categoriesSection);
+            
+            // Create a search box
+            const searchBox = document.createElement('div');
+            searchBox.className = 'tools-search';
+            searchBox.innerHTML = `
+                <input type="text" id="tools-search-input" placeholder="Search tools..." class="tools-search-input">
+            `;
+            toolsContent.appendChild(searchBox);
+            
+            // Add event listener for search
+            const searchInput = document.getElementById('tools-search-input');
+            searchInput.addEventListener('input', function() {
+                filterTools(this.value.toLowerCase());
+            });
+            
+            // Add each category
+            sortedCategories.forEach(category => {
+                const categorySection = document.createElement('div');
+                categorySection.className = 'context-section tools-category';
+                categorySection.setAttribute('data-category', category);
+                
+                // Get icon for category
+                const categoryIcon = getCategoryIcon(category);
+                
+                categorySection.innerHTML = `
+                    <div class="context-section-title">
+                        <i class="${categoryIcon}"></i> ${formatCategoryName(category)}
+                        <span class="tool-count">(${categories[category].length})</span>
+                    </div>
+                `;
+                
+                // Add tools for this category
+                categories[category].forEach(tool => {
+                    const toolItem = document.createElement('div');
+                    toolItem.className = 'context-item tool-item';
+                    toolItem.setAttribute('data-tool', tool.name);
+                    toolItem.setAttribute('data-search', `${tool.name} ${tool.description}`.toLowerCase());
+                    
+                    toolItem.innerHTML = `
+                        <div class="context-item-header">
+                            <span class="context-item-title">${formatToolName(tool.name)}</span>
+                            <button class="tool-use-button" title="Use tool" data-tool="${tool.name}">
+                                <i class="fas fa-terminal"></i>
+                            </button>
+                        </div>
+                        <div class="context-item-details">${tool.description}</div>
+                    `;
+                    
+                    // Add event listener for using the tool
+                    toolItem.querySelector('.tool-use-button').addEventListener('click', function() {
+                        useToolCommand(tool.name);
+                    });
+                    
+                    categorySection.appendChild(toolItem);
+                });
+                
+                toolsContent.appendChild(categorySection);
+            });
+        }
+
+        // Helper function to format tool name
+        function formatToolName(name) {
+            return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        // Helper function to format category name
+        function formatCategoryName(category) {
+            return category.charAt(0).toUpperCase() + category.slice(1);
+        }
+
+        // Get icon for category
+        function getCategoryIcon(category) {
+            switch (category.toLowerCase()) {
+                case 'kubectl':
+                    return 'fas fa-terminal';
+                case 'node':
+                    return 'fas fa-server';
+                case 'pod':
+                    return 'fas fa-box';
+                case 'deployment':
+                    return 'fas fa-rocket';
+                case 'service':
+                    return 'fas fa-network-wired';
+                case 'logging':
+                    return 'fas fa-file-alt';
+                case 'namespace':
+                    return 'fas fa-folder';
+                case 'config':
+                    return 'fas fa-cog';
+                case 'resource':
+                    return 'fas fa-cubes';
+                default:
+                    return 'fas fa-wrench';
+            }
+        }
+
+        // Function to filter tools based on search
+        function filterTools(query) {
+            const toolItems = document.querySelectorAll('.tool-item');
+            const categories = document.querySelectorAll('.tools-category');
+            
+            if (!query) {
+                // Show all if query is empty
+                toolItems.forEach(item => item.classList.remove('hidden-tool'));
+                categories.forEach(cat => cat.classList.remove('empty-category'));
+                return;
+            }
+            
+            // Check each tool
+            toolItems.forEach(item => {
+                const searchText = item.getAttribute('data-search');
+                if (searchText.includes(query)) {
+                    item.classList.remove('hidden-tool');
+                } else {
+                    item.classList.add('hidden-tool');
+                }
+            });
+            
+            // Check if categories are empty
+            categories.forEach(category => {
+                const visibleItems = category.querySelectorAll('.tool-item:not(.hidden-tool)');
+                if (visibleItems.length === 0) {
+                    category.classList.add('empty-category');
+                } else {
+                    category.classList.remove('empty-category');
+                }
+            });
+        }
+
+        // Function to use a tool command
+        function useToolCommand(toolName) {
+            // Insert tool command in input field
+            const formattedName = formatToolName(toolName);
+            messageInput.value = `/use ${toolName} `;
+            messageInput.focus();
+            
+            // Close the tools panel
+            toggleToolsPanel(false);
+            
+            // Show toast notification
+            showToast(`Tool selected: ${formattedName}`);
+            
+            // Trigger input event to resize textarea
+            messageInput.dispatchEvent(new Event('input'));
+        }
+
         // Toggle context panel
         function toggleContextPanel(show) {
             if (show === undefined) {
