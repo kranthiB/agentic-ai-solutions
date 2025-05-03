@@ -107,8 +107,25 @@ class TaskExecutor:
 
             self.logger.info("Asking agent how to accomplish task: %s", task_description)
             
-            # Create user prompt with task context
-            user_prompt = f"User Goal: {task_description}\nSuggest safest available tool and parameters to achieve this."
+            context_info = ""
+            if "context" in task and task["context"]:
+                context = task["context"]
+                history_summary = "\n".join([
+                    f"{msg['sender']}: {msg['content']}" 
+                    for msg in context.get("history", [])[:5]  # Last 5 messages for brevity
+                ])
+
+            context_info = f"""
+            Previous conversation:
+            {history_summary}
+
+            Original goal: {context.get('goal', 'Not specified')}
+            """
+
+            user_prompt = f"""Context: {context_info}
+
+            User Goal: {task_description}
+            Suggest safest available tool and parameters to achieve this."""
             
             # Validate task description through guardrails
             is_valid, reason = await self.guardrail_service.validate_user_input(

@@ -31,6 +31,9 @@ from reflection.reflection_engine import get_reflection_engine
 # Import guardrail service
 from services.guardrail.guardrail_service import get_guardrail_service
 
+# Import services
+from services.conversation.conversation_service import get_conversation_service
+
 # Import API bridge for WebSocket updates
 try:
     import api_bridge
@@ -51,6 +54,9 @@ class ConversationManagerAPI:
         
         # Initialize guardrail service
         self.guardrail_service = get_guardrail_service()
+        
+        # Initialize conversation service
+        self.conversation_service = get_conversation_service()
         
         self.logger.info("Initializing ConversationManagerAPI with WebSocket integration")
         
@@ -658,18 +664,41 @@ class ConversationManagerAPI:
         
         try:
             # Retrieve conversation context from memory
-            # TODO: Implement context retrieval from memory
+            conversation = await self.conversation_service.get_conversation(conversation_id)
+            if not conversation:
+                self.logger.error(f"Conversation {conversation_id} not found")
+                return f"Unable to process follow-up: conversation {conversation_id} not found"
             
-            # For now, handle as a simple query without context
-            # In a real implementation, you would use the conversation history
+            # Get conversation messages for context
+            messages = await self.conversation_service.list_messages(conversation_id)
+            if not messages:
+                self.logger.warning(f"No messages found for conversation {conversation_id}")
             
-            # Create a single task for the follow-up
+            # Get session from short-term memory if available
+            session_id = conversation.get("session_id")
+            session_context = []
+            if session_id:
+                session_context = self.short_term_memory.get_context(session_id)
+            
+            # Build context from conversation history
+            context = {
+                "goal": conversation.get("goal", ""),
+                "goal_category": conversation.get("goal_category", "general"),
+                "history": messages,
+                "session_context": session_context
+            }
+            
+            # Log context retrieval
+            self.logger.info(f"Retrieved context for conversation {conversation_id}: {len(messages)} messages, {len(session_context)} session items")
+            
+            # Create a task that includes the conversation context
             task_id = str(uuid.uuid4())
             task = {
                 "id": task_id,
                 "description": f"Answer follow-up question: {query}",
                 "priority": 1,
-                "status": "PENDING"
+                "status": "PENDING",
+                "context": context
             }
             
             # Track task execution time
@@ -693,7 +722,7 @@ class ConversationManagerAPI:
                 task, 
                 self.kube_agent, 
                 self.executor_agent,
-                goal_category="followup",
+                goal_category=conversation.get("goal_category", "general"),
                 conversation_id=conversation_id
             )
             
